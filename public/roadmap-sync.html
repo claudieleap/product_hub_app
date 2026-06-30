@@ -164,8 +164,8 @@
             const apiKey = document.getElementById('apiKey').value.trim();
             const btn = document.getElementById('btnPublish');
 
-            if (!apiBase || !apiKey) {
-                setStatus('err', 'Informe a URL da API e a API Key.');
+            if (!apiBase) {
+                setStatus('err', 'Informe a URL da API.');
                 return;
             }
 
@@ -181,7 +181,7 @@
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
-                        'X-API-Key': apiKey
+                        ...(apiKey ? { 'X-API-Key': apiKey } : {})
                     },
                     body: JSON.stringify(payload)
                 });

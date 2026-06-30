@@ -12,20 +12,25 @@ if (!file) {
     process.exit(1);
 }
 
-if (!baseUrl || !apiKey) {
-    console.error('Informe VITE_API_BASE_URL e VITE_API_KEY (env ou argumentos).');
+if (!baseUrl) {
+    console.error('Informe VITE_API_BASE_URL ou o argumento API_BASE_URL.');
     process.exit(1);
 }
 
 const payload = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-const response = await fetch(`${baseUrl}/roadmap/sync`, {
-    method: 'POST',
-    headers: {
+const headers = {
         Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
-    },
+        'Content-Type': 'application/json'
+    };
+
+    if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+    }
+
+    const response = await fetch(`${baseUrl}/roadmap/sync`, {
+        method: 'POST',
+        headers,
     body: JSON.stringify(payload)
 });
 

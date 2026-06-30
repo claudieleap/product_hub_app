@@ -1,0 +1,35 @@
+:root {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color: var(--p-surface-900);
+    background-color: var(--p-surface-50);
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+}
+
+a {
+    color: inherit;
+}
+
+.nav-link {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    color: var(--p-surface-600);
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-link:hover {
+    background: var(--p-surface-100);
+    color: var(--p-surface-900);
+}
+
+.nav-link--active {
+    background: color-mix(in srgb, var(--p-primary-500) 12%, white);
+    color: var(--p-primary-700);
+    font-weight: 600;
+}

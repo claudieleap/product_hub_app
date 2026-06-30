@@ -17,7 +17,14 @@ npm install
 npm run dev
 ```
 
-App em `http://localhost:5173`. O proxy do Vite encaminha `/api` para `http://localhost:8000` (product_hub_api).
+## Rotas
+
+- `/` — Home do Product Hub
+- `/roadmap` — Matriz de prioridades
+- `/roadmap/desenvolvimento` — Board kanban de desenvolvimento
+- `/status` — Health check da API
+
+Configure `VITE_API_BASE_URL=/api/v1` no `.env` para sincronizar com o backend.
 
 ## Variáveis
 

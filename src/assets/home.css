@@ -1,0 +1,1316 @@
+.home-page {
+    --hub-ink: #0c1b2a;
+    --hub-ink-soft: #33445c;
+    --hub-muted: #62718b;
+    --hub-line: #e4e8f2;
+    --hub-bg: #f5f6fb;
+    --hub-surface: #ffffff;
+    --hub-blue: #1e4fe0;
+    --hub-blue-wash: #eef2fe;
+    --hub-teal: #0e9e92;
+    --hub-teal-wash: #e4f5f2;
+    --hub-amber: #c8841a;
+    --hub-amber-wash: #fbf1de;
+    --hub-coral: #cf4a3e;
+    --hub-coral-wash: #fbe9e7;
+    --hub-green: #168a5a;
+    --hub-green-wash: #e3f3ea;
+    --hub-moat: #6e47c9;
+    --hub-moat-wash: #f0eafb;
+    --hub-shadow: 0 1px 2px rgba(12, 27, 42, 0.04), 0 8px 24px rgba(12, 27, 42, 0.06);
+
+    min-height: 100vh;
+    background: var(--hub-bg);
+    color: var(--hub-ink);
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.home-page .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+}
+
+/* Hero */
+.home-hero {
+    padding: 48px 0 40px;
+}
+
+.home-hero__eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--hub-blue);
+    font-weight: 600;
+}
+
+.home-hero h1 {
+    margin: 10px 0 0;
+    font-family: Archivo, sans-serif;
+    font-weight: 800;
+    font-size: clamp(32px, 5vw, 48px);
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+}
+
+.home-hero__lead {
+    margin: 16px 0 0;
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--hub-ink-soft);
+    max-width: 52ch;
+}
+
+.home-hero__lead b {
+    color: var(--hub-ink);
+    font-weight: 600;
+}
+
+/* Hub cards */
+.hub-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 48px;
+}
+
+.hub-card {
+    border: 1px solid var(--hub-line);
+    background: var(--hub-surface);
+    border-radius: 16px;
+    padding: 22px 20px;
+    box-shadow: var(--hub-shadow);
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.hub-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--hub-blue);
+    box-shadow: 0 12px 32px rgba(30, 79, 224, 0.1);
+}
+
+.hub-card__icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    color: #fff;
+}
+
+.hub-card__title {
+    font-family: Archivo, sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin: 0;
+}
+
+.hub-card__desc {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--hub-muted);
+    flex: 1;
+}
+
+.hub-card__action {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hub-blue);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Roadmap section */
+/* Roadmap page */
+.roadmap-page-header {
+    padding: 40px 0 24px;
+    border-bottom: 2px solid var(--hub-ink);
+    margin-bottom: 24px;
+}
+
+.roadmap-page-header h1 {
+    margin: 10px 0 0;
+    font-family: Archivo, sans-serif;
+    font-weight: 800;
+    font-size: clamp(28px, 4vw, 36px);
+    letter-spacing: -0.02em;
+}
+
+.roadmap-page-header__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.roadmap-page-header__actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.roadmap-publish-ok {
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(22, 138, 90, 0.12);
+    color: #168a5a;
+    font-size: 0.92rem;
+}
+
+.roadmap-stats--inline {
+    margin-top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.roadmap-add-module-btn {
+    flex: none;
+}
+
+.roadmap-module-intro {
+    margin: 0 0 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--hub-muted);
+}
+
+.roadmap-module-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roadmap-module-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    flex: none;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.roadmap-row-label--custom .roadmap-row-label__title::after {
+    content: 'Novo';
+    margin-left: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hub-muted);
+    background: var(--hub-line-soft);
+    border-radius: 4px;
+    padding: 2px 5px;
+    vertical-align: middle;
+}
+
+.roadmap-module__menu {
+    border: none;
+    background: none;
+    color: var(--hub-muted);
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 13px;
+    line-height: 1;
+    flex: none;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.roadmap-module__menu:hover {
+    color: var(--hub-ink-soft);
+    background: var(--hub-line-soft);
+}
+
+:global(.roadmap-module-menu__danger) {
+    color: #cf4a3e !important;
+}
+
+:global(.roadmap-module-menu__danger .p-menuitem-icon) {
+    color: #cf4a3e !important;
+}
+
+.roadmap-section {
+    scroll-margin-top: 80px;
+    margin-top: 0;
+}
+
+.roadmap-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--hub-ink);
+}
+
+.roadmap-header h2 {
+    margin: 0;
+    font-family: Archivo, sans-serif;
+    font-weight: 800;
+    font-size: clamp(24px, 3vw, 32px);
+    letter-spacing: -0.02em;
+}
+
+.roadmap-header p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    color: var(--hub-muted);
+    max-width: 56ch;
+}
+
+.roadmap-stats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.roadmap-stat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-line);
+    color: var(--hub-muted);
+}
+
+.roadmap-stat b {
+    color: var(--hub-ink);
+}
+
+/* Matrix */
+.roadmap-matrix-wrap {
+    overflow: auto;
+    border: 1px solid var(--hub-line);
+    border-radius: 16px;
+    background: var(--hub-surface);
+    box-shadow: var(--hub-shadow);
+}
+
+.roadmap-matrix {
+    min-width: 1000px;
+    display: grid;
+    grid-template-columns: 200px repeat(4, minmax(200px, 1fr));
+}
+
+.roadmap-matrix__corner {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #fafbfe;
+    border-right: 1px solid var(--hub-line);
+    border-bottom: 1px solid var(--hub-line);
+    padding: 14px 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--hub-muted);
+    display: flex;
+    align-items: flex-end;
+}
+
+.roadmap-col-header {
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--hub-line);
+    border-right: 1px solid var(--hub-line);
+    background: #fafbfe;
+    min-height: 160px;
+}
+
+.roadmap-col-header--priority {
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 12px;
+}
+
+.roadmap-col-header:nth-child(5n),
+.roadmap-cell:nth-child(5n) {
+    border-right: none;
+}
+
+.roadmap-col-header__top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.roadmap-col-header__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 14px;
+    flex: none;
+}
+
+.roadmap-col-header__title {
+    font-family: Archivo, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.roadmap-col-header__count {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--hub-muted);
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-line);
+    border-radius: 999px;
+    padding: 2px 7px;
+}
+
+.roadmap-col-header__desc {
+    margin: 0;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--hub-muted);
+}
+
+.roadmap-row-label {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: var(--hub-surface);
+    border-right: 1px solid var(--hub-line);
+    border-bottom: 1px solid var(--hub-line);
+    padding: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.roadmap-row-label--product {
+    flex-direction: column;
+    gap: 8px;
+    background: #fafbfe;
+    min-height: 120px;
+}
+
+.roadmap-row-label__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.roadmap-row-label__title {
+    font-family: Archivo, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+    flex: 1;
+    min-width: 0;
+}
+
+.roadmap-row-label__desc {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--hub-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.roadmap-row-label__badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    flex: none;
+    white-space: nowrap;
+}
+
+.priority-alta .roadmap-row-label__badge {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+}
+
+.priority-media .roadmap-row-label__badge {
+    background: var(--hub-amber-wash);
+    color: var(--hub-amber);
+}
+
+.priority-baixa .roadmap-row-label__badge {
+    background: var(--hub-blue-wash);
+    color: var(--hub-blue);
+}
+
+.priority-perfumaria .roadmap-row-label__badge {
+    background: #eef1f6;
+    color: var(--hub-muted);
+}
+
+.roadmap-cell {
+    border-right: 1px solid var(--hub-line);
+    border-bottom: 1px solid var(--hub-line);
+    padding: 10px;
+    min-height: 120px;
+    background: var(--hub-surface);
+    vertical-align: top;
+}
+
+.roadmap-cell:hover {
+    background: #fcfdff;
+}
+
+.roadmap-cell--drop-target {
+    background: var(--hub-blue-wash) !important;
+    outline: 2px dashed var(--hub-blue);
+    outline-offset: -4px;
+}
+
+.roadmap-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 7px 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 28%, transparent);
+    border-left: 3px solid var(--feature-accent, var(--hub-blue));
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 10%, #fff);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--hub-ink-soft);
+    cursor: grab;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.roadmap-feature:active {
+    cursor: grabbing;
+}
+
+.roadmap-feature--dragging {
+    opacity: 0.55;
+}
+
+.roadmap-feature:hover {
+    border-color: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 42%, transparent);
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 16%, #fff);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 12%, transparent);
+}
+
+.roadmap-feature__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.roadmap-feature__text {
+    word-break: break-word;
+}
+
+.roadmap-feature__metrics {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--hub-muted);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.roadmap-feature__metrics i {
+    font-size: 9px;
+}
+
+.roadmap-feature__remove {
+    border: none;
+    background: none;
+    color: var(--hub-muted);
+    cursor: pointer;
+    padding: 0;
+    font-size: 11px;
+    line-height: 1;
+    flex: none;
+}
+
+.roadmap-feature__remove:hover {
+    color: var(--hub-coral);
+}
+
+.roadmap-delete-confirm {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--hub-ink-soft);
+}
+
+.roadmap-add-btn {
+    width: 100%;
+    border: 1px dashed var(--hub-line);
+    background: transparent;
+    color: var(--hub-muted);
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 6px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.roadmap-add-btn:hover {
+    border-color: var(--hub-blue);
+    color: var(--hub-blue);
+    background: var(--hub-blue-wash);
+}
+
+/* Dialog form */
+.roadmap-loading {
+    padding: 48px 0;
+    color: var(--hub-muted, #62718b);
+    font-size: 14px;
+}
+
+.roadmap-sync-warning {
+    margin: 0 0 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fbf1de;
+    color: #8a5a12;
+    font-size: 13px;
+}
+
+.roadmap-form-dialog {
+    --hub-line: #c5ced9;
+    --hub-ink: #0c1b2a;
+    --hub-ink-soft: #33445c;
+    --hub-muted: #62718b;
+    --hub-blue: #1e4fe0;
+    --hub-surface: #ffffff;
+    --roadmap-dialog-label: 12px;
+    --roadmap-dialog-body: 14px;
+    --roadmap-dialog-hint: 12px;
+    --roadmap-dialog-pill: 12px;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.roadmap-form-dialog .p-dialog-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.roadmap-form-dialog .roadmap-module-intro {
+    font-size: var(--roadmap-dialog-hint);
+    line-height: 1.45;
+}
+
+.roadmap-form-dialog .roadmap-dialog-meta {
+    font-size: var(--roadmap-dialog-body);
+    line-height: 1.4;
+}
+
+.roadmap-form-dialog .roadmap-dialog-meta strong {
+    font-size: var(--roadmap-dialog-body);
+    font-weight: 600;
+    color: var(--hub-ink-soft);
+}
+
+.roadmap-form-dialog .roadmap-dialog-field label {
+    font-size: var(--roadmap-dialog-label);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: var(--hub-ink-soft);
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-inputtext,
+.roadmap-form-dialog .roadmap-dialog-field .p-textarea,
+.roadmap-form-dialog .roadmap-dialog-field .p-select,
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect {
+    width: 100%;
+    border: 1px solid var(--hub-line);
+    border-radius: 8px;
+    background: var(--hub-surface);
+    color: var(--hub-ink-soft);
+    font-family: Inter, sans-serif;
+    font-size: var(--roadmap-dialog-body);
+    line-height: 1.45;
+    box-shadow: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-select-label,
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect-label {
+    font-size: var(--roadmap-dialog-body);
+    line-height: 1.45;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect-label.p-placeholder {
+    font-size: 13px;
+    color: var(--hub-muted);
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect-chip {
+    font-size: var(--roadmap-dialog-pill);
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect-chip-label {
+    font-size: inherit;
+    line-height: 1.35;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-inputtext,
+.roadmap-form-dialog .roadmap-dialog-field .p-textarea {
+    padding: 9px 10px;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-inputtext:enabled:hover,
+.roadmap-form-dialog .roadmap-dialog-field .p-textarea:enabled:hover,
+.roadmap-form-dialog .roadmap-dialog-field .p-select:not(.p-disabled):hover,
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect:not(.p-disabled):hover {
+    border-color: #9aa8bc;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-inputtext:enabled:focus,
+.roadmap-form-dialog .roadmap-dialog-field .p-textarea:enabled:focus,
+.roadmap-form-dialog .roadmap-dialog-field .p-select.p-focus,
+.roadmap-form-dialog .roadmap-dialog-field .p-multiselect.p-focus {
+    border-color: var(--hub-blue);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--hub-blue) 16%, transparent);
+    outline: none;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-inputtext::placeholder,
+.roadmap-form-dialog .roadmap-dialog-field .p-textarea::placeholder {
+    color: var(--hub-muted);
+    font-size: 13px;
+}
+
+.roadmap-form-dialog .roadmap-dialog-hint {
+    font-size: var(--roadmap-dialog-hint);
+    line-height: 1.45;
+}
+
+.roadmap-form-dialog .roadmap-dialog-check label {
+    font-size: var(--roadmap-dialog-body);
+    font-weight: 400;
+    line-height: 1.45;
+}
+
+.roadmap-form-dialog .roadmap-priority-pill,
+.roadmap-form-dialog .roadmap-dev-pill {
+    font-size: var(--roadmap-dialog-pill);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    padding: 3px 10px;
+}
+
+.roadmap-form-dialog .roadmap-priority-pill {
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-select {
+    min-height: 40px;
+}
+
+.roadmap-form-dialog .roadmap-dialog-field .p-select-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+}
+
+.roadmap-form-dialog .p-dialog-footer .p-button {
+    font-size: var(--roadmap-dialog-body);
+}
+
+.roadmap-form-dialog .roadmap-product-select__value {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.roadmap-form-dialog .roadmap-product-select__icon {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+}
+
+.roadmap-form-dialog .roadmap-module-option .roadmap-col-header__icon {
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+}
+
+.roadmap-item-dialog.p-dialog {
+    max-width: 96vw;
+}
+
+.roadmap-item-dialog .p-dialog-header {
+    padding: 1.25rem 1.5rem 1rem;
+}
+
+.roadmap-item-dialog .p-dialog-content {
+    padding: 0 1.5rem 1.25rem;
+}
+
+.roadmap-item-dialog .p-dialog-footer {
+    padding: 0 1.5rem 1.25rem;
+}
+
+.roadmap-metrics-select.p-multiselect {
+    min-height: 3rem;
+}
+
+.roadmap-metrics-select .p-multiselect-label {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.65rem 0.75rem;
+}
+
+.roadmap-metrics-panel.p-multiselect-overlay {
+    min-width: min(720px, 92vw) !important;
+}
+
+.roadmap-metrics-panel .p-multiselect-option,
+.roadmap-metrics-panel .p-multiselect-option-group {
+    white-space: normal;
+    line-height: 1.45;
+    align-items: flex-start;
+    padding-top: 0.65rem;
+    padding-bottom: 0.65rem;
+}
+
+.roadmap-metrics-panel .p-multiselect-option-label {
+    white-space: normal;
+    line-height: 1.45;
+}
+
+.roadmap-metrics-panel .p-multiselect-option-group {
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.roadmap-dialog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.roadmap-dialog-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 16px;
+    margin-bottom: 14px;
+    align-items: start;
+}
+
+.roadmap-form-dialog .roadmap-dialog-check {
+    min-height: 40px;
+    margin-bottom: 0;
+}
+
+.roadmap-dialog-row .roadmap-dialog-field {
+    margin-bottom: 0;
+}
+
+@media (max-width: 520px) {
+    .roadmap-dialog-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.roadmap-dialog-field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hub-ink-soft, #33445c);
+}
+
+.roadmap-dialog-meta {
+    font-size: 12px;
+    color: var(--hub-muted);
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 8%, #fff);
+    border-radius: 8px;
+    border-left: 3px solid var(--feature-accent, var(--hub-blue));
+}
+
+.roadmap-dialog-hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--hub-muted);
+    line-height: 1.4;
+}
+
+.roadmap-dialog-hint a {
+    color: var(--hub-blue);
+    text-decoration: none;
+}
+
+.roadmap-dialog-hint a:hover {
+    text-decoration: underline;
+}
+
+.roadmap-priority-pill {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.roadmap-priority-pill.priority-alta {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+}
+
+.roadmap-priority-pill.priority-media {
+    background: var(--hub-amber-wash);
+    color: var(--hub-amber);
+}
+
+.roadmap-priority-pill.priority-baixa {
+    background: var(--hub-blue-wash);
+    color: var(--hub-blue);
+}
+
+.roadmap-priority-pill.priority-perfumaria {
+    background: #eef1f6;
+    color: var(--hub-muted);
+}
+
+.roadmap-feature__metrics i {
+    font-size: 9px;
+}
+
+.roadmap-feature__dev-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6e47c9;
+    background: #f0eafb;
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+/* Roadmap tabs */
+.roadmap-tabs {
+    display: inline-flex;
+    gap: 6px;
+    margin-top: 18px;
+    padding: 4px;
+    background: var(--hub-line-soft, #eef1f6);
+    border-radius: 10px;
+}
+
+.roadmap-tabs__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--hub-muted);
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+}
+
+.roadmap-tabs__link:hover {
+    color: var(--hub-ink-soft);
+}
+
+.roadmap-tabs__link.active {
+    background: #fff;
+    color: var(--hub-blue);
+    box-shadow: 0 1px 2px rgba(12, 27, 42, 0.06);
+}
+
+.roadmap-dialog-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.roadmap-dialog-check label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--hub-ink-soft);
+    cursor: pointer;
+}
+
+.roadmap-dev-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.dev-a-fazer.roadmap-dev-pill,
+.roadmap-dev-stat.dev-a-fazer {
+    background: #eef2fe;
+    color: #1e4fe0;
+}
+
+.dev-em-andamento.roadmap-dev-pill,
+.roadmap-dev-stat.dev-em-andamento {
+    background: #fbf1de;
+    color: #c8841a;
+}
+
+.dev-concluido.roadmap-dev-pill,
+.roadmap-dev-stat.dev-concluido {
+    background: #e3f3ea;
+    color: #168a5a;
+}
+
+/* Dev board */
+.roadmap-dev-progress {
+    margin-bottom: 28px;
+    padding: 24px;
+    border: 1px solid var(--hub-line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--hub-shadow);
+}
+
+.roadmap-dev-progress__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.roadmap-dev-progress__head h2 {
+    margin: 0 0 4px;
+    font-family: Archivo, sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.roadmap-dev-progress__head p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--hub-muted);
+}
+
+.roadmap-dev-progress__pct {
+    font-family: Archivo, sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--hub-blue);
+    line-height: 1;
+}
+
+.roadmap-dev-progress__bar {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--hub-line-soft, #eef1f6);
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.roadmap-dev-progress__fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #1e4fe0, #0e9e92);
+    transition: width 0.35s ease;
+}
+
+.roadmap-dev-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.roadmap-dev-stat {
+    padding: 12px 14px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.roadmap-dev-stat b {
+    font-family: Archivo, sans-serif;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.roadmap-dev-stat span {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.roadmap-dev-stat--total {
+    background: #f8fafc;
+    color: var(--hub-ink-soft);
+}
+
+.roadmap-dev-empty {
+    text-align: center;
+    padding: 56px 24px;
+    border: 1px dashed var(--hub-line);
+    border-radius: 16px;
+    background: #fff;
+}
+
+.roadmap-dev-empty i {
+    font-size: 28px;
+    color: var(--hub-muted);
+    margin-bottom: 12px;
+}
+
+.roadmap-dev-empty h3 {
+    margin: 0 0 8px;
+    font-family: Archivo, sans-serif;
+}
+
+.roadmap-dev-empty p {
+    margin: 0 auto;
+    max-width: 42ch;
+    color: var(--hub-muted);
+    line-height: 1.5;
+}
+
+.roadmap-dev-empty a {
+    color: var(--hub-blue);
+}
+
+.roadmap-dev-board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+.roadmap-dev-column {
+    min-height: 320px;
+    border: 1px solid var(--hub-line);
+    border-radius: 14px;
+    background: #fafbfe;
+    display: flex;
+    flex-direction: column;
+    transition: outline 0.15s, background 0.15s;
+}
+
+.roadmap-dev-column--drop-target {
+    outline: 2px dashed var(--hub-blue);
+    background: var(--hub-blue-wash);
+}
+
+.roadmap-dev-column__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    border-bottom: 1px solid var(--hub-line);
+}
+
+.roadmap-dev-column__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.roadmap-dev-column.dev-a-fazer .roadmap-dev-column__title { color: #1e4fe0; }
+.roadmap-dev-column.dev-em-andamento .roadmap-dev-column__title { color: #c8841a; }
+.roadmap-dev-column.dev-concluido .roadmap-dev-column__title { color: #168a5a; }
+
+.roadmap-dev-column__count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--hub-line);
+    color: var(--hub-muted);
+}
+
+.roadmap-dev-column__body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.roadmap-dev-card {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 28%, transparent);
+    border-left: 3px solid var(--feature-accent, var(--hub-blue));
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 10%, #fff);
+    cursor: grab;
+    transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.roadmap-dev-card:hover {
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 12%, transparent);
+}
+
+.roadmap-dev-card--dragging {
+    opacity: 0.5;
+}
+
+.roadmap-dev-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.roadmap-dev-card__module {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hub-muted);
+}
+
+.roadmap-dev-card__remove {
+    border: none;
+    background: none;
+    color: var(--hub-muted);
+    cursor: pointer;
+    padding: 0;
+}
+
+.roadmap-dev-card__title {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--hub-ink);
+}
+
+.roadmap-dev-card__notes {
+    margin: 0 0 8px;
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--hub-muted);
+}
+
+.roadmap-dev-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.roadmap-dev-card__metrics {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--hub-muted);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+@media (max-width: 1100px) {
+    .roadmap-dev-board {
+        grid-template-columns: 1fr;
+    }
+
+    .roadmap-dev-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .hub-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Modo escuro — padrão Material #121212 */
+.dark .home-page {
+    --hub-line-soft: rgba(255, 255, 255, 0.08);
+}
+
+.dark .home-page .roadmap-matrix__corner,
+.dark .home-page .roadmap-col-header,
+.dark .home-page .roadmap-row-label--product,
+.dark .home-page .roadmap-dev-column {
+    background: #1e1e1e;
+}
+
+.dark .home-page .roadmap-cell:hover {
+    background: #232323;
+}
+
+.dark .home-page .priority-perfumaria .roadmap-row-label__badge,
+.dark .home-page .roadmap-priority-pill.priority-perfumaria {
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.dark .home-page .roadmap-feature,
+.dark .home-page .hub-card {
+    background: #1e1e1e;
+}
+
+.dark .home-page .roadmap-feature {
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 12%, #1e1e1e);
+}
+
+.dark .home-page .roadmap-feature:hover,
+.dark .home-page .roadmap-feature--dragging {
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 18%, #1e1e1e);
+}
+
+.dark .home-page .roadmap-dev-card {
+    background: color-mix(in srgb, var(--feature-accent, var(--hub-blue)) 10%, #1e1e1e);
+}

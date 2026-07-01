@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Publicar roadmap — Aleevia</title>
+    <style>
+        :root {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            color: #1a1a2e;
+            background: #f6f8fc;
+        }
+        body {
+            margin: 0;
+            padding: 24px;
+        }
+        main {
+            max-width: 720px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        h1 { margin-top: 0; font-size: 1.35rem; }
+        p { line-height: 1.5; color: #475569; }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 16px 0 6px;
+        }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        button.primary { background: #1e4fe0; color: #fff; }
+        button.secondary { background: #e2e8f0; color: #1a1a2e; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.92rem;
+            display: none;
+        }
+        .status.ok { display: block; background: #ecfdf5; color: #168a5a; }
+        .status.err { display: block; background: #fef2f2; color: #b91c1c; }
+        pre {
+            margin-top: 16px;
+            padding: 12px;
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 8px;
+            overflow: auto;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Publicar roadmap do navegador</h1>
+        <p>
+            Use esta página no mesmo domínio onde você editou o roadmap (ex.: portal local ou produção).
+            Os dados são lidos do <code>localStorage</code> deste navegador e enviados para a API compartilhada.
+        </p>
+
+        <label for="apiBase">URL base da API (ex.: https://back-main.aleevia.cloud/api/v1)</label>
+        <input id="apiBase" type="url" placeholder="https://back-main.aleevia.cloud/api/v1" />
+
+        <label for="apiKey">API Key (X-API-Key)</label>
+        <input id="apiKey" type="password" autocomplete="off" />
+
+        <div class="actions">
+            <button type="button" class="secondary" id="btnExport">Exportar JSON</button>
+            <button type="button" class="primary" id="btnPublish">Publicar na API</button>
+        </div>
+
+        <div id="status" class="status"></div>
+        <pre id="preview" hidden></pre>
+    </main>
+
+    <script>
+        const MATRIX_KEY = 'aleevia-roadmap-matrix-v1';
+        const DELETED_SEEDS_KEY = 'aleevia-roadmap-deleted-seeds-v1';
+        const PRODUCTS_KEY = 'aleevia-roadmap-products-v1';
+        const CONFIG_KEY = 'aleevia-roadmap-sync-config-v1';
+
+        function readJson(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch {
+                return fallback;
+            }
+        }
+
+        function buildPayload() {
+            return {
+                items: readJson(MATRIX_KEY, []),
+                customProducts: readJson(PRODUCTS_KEY, []),
+                deletedSeedIds: readJson(DELETED_SEEDS_KEY, [])
+            };
+        }
+
+        function loadConfig() {
+            const cfg = readJson(CONFIG_KEY, {});
+            document.getElementById('apiBase').value = cfg.apiBase || '';
+            document.getElementById('apiKey').value = cfg.apiKey || '';
+        }
+
+        function saveConfig() {
+            localStorage.setItem(
+                CONFIG_KEY,
+                JSON.stringify({
+                    apiBase: document.getElementById('apiBase').value.trim(),
+                    apiKey: document.getElementById('apiKey').value.trim()
+                })
+            );
+        }
+
+        function setStatus(type, message) {
+            const el = document.getElementById('status');
+            el.className = 'status ' + type;
+            el.textContent = message;
+        }
+
+        document.getElementById('btnExport').addEventListener('click', () => {
+            const payload = buildPayload();
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'roadmap-export-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            document.getElementById('preview').hidden = false;
+            document.getElementById('preview').textContent =
+                payload.items.length + ' itens · ' +
+                payload.customProducts.length + ' módulos custom · ' +
+                payload.deletedSeedIds.length + ' seeds excluídos';
+            setStatus('ok', 'JSON exportado.');
+        });
+
+        document.getElementById('btnPublish').addEventListener('click', async () => {
+            const apiBase = document.getElementById('apiBase').value.trim().replace(/\/$/, '');
+            const apiKey = document.getElementById('apiKey').value.trim();
+            const btn = document.getElementById('btnPublish');
+
+            if (!apiBase) {
+                setStatus('err', 'Informe a URL da API.');
+                return;
+            }
+
+            saveConfig();
+            btn.disabled = true;
+            setStatus('', '');
+
+            const payload = buildPayload();
+
+            try {
+                const response = await fetch(apiBase + '/roadmap/sync', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        ...(apiKey ? { 'X-API-Key': apiKey } : {})
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                let body = null;
+                try {
+                    body = await response.json();
+                } catch {
+                    body = null;
+                }
+
+                if (!response.ok) {
+                    throw new Error(body?.message || 'Erro HTTP ' + response.status);
+                }
+
+                const data = body?.data ?? body;
+                setStatus(
+                    'ok',
+                    'Publicado com sucesso: ' +
+                        (data?.items?.length ?? payload.items.length) + ' itens na API.'
+                );
+            } catch (error) {
+                setStatus('err', error.message || 'Falha ao publicar.');
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        loadConfig();
+    </script>
+</body>
+</html>

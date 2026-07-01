@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
-import RoadmapTabs from '@/components/RoadmapTabs.vue';
+import RoadmapPageHeader from '@/components/RoadmapPageHeader.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
 import { ROADMAP_DEV_STATUSES } from '@/data/roadmapDevStatus';
 import { useRoadmapMatrix } from '@/composables/useRoadmapMatrix';
@@ -319,32 +319,30 @@ async function confirmSaveModule() {
                 {{ roadmapSyncError }} — exibindo dados locais como fallback.
             </p>
             <p v-if="dragError" class="roadmap-sync-warning">{{ dragError }}</p>
-            <section class="roadmap-page-header vp-doc">
-                <span class="home-hero__eyebrow">Roadmap {{ typeMeta.label }}</span>
-                <h1>Matriz de itens</h1>
-                <p class="home-hero__lead">
-                    {{ typeMeta.description }}
-                    Colunas = prioridade (Alta, Média, Baixa, Perfumaria). Linhas = módulos.
-                    Adicione itens em cada célula ou arraste cards entre colunas e módulos para reorganizar o roadmap.
-                </p>
-                <RoadmapTabs />
-                <div class="roadmap-page-header__actions">
+            <RoadmapPageHeader
+                view="matrix"
+                title="Matriz de itens"
+                :lead="typeMeta.tagline"
+            >
+                <template #actions>
                     <div class="roadmap-stats roadmap-stats--inline">
                         <span class="roadmap-stat"><b>{{ totalFeatures }}</b> itens</span>
                         <span class="roadmap-stat"><b>{{ allProducts.length }}</b> módulos</span>
                         <span class="roadmap-stat"><b>{{ ROADMAP_PRIORITIES.length }}</b> níveis</span>
                     </div>
-                    <div class="roadmap-page-header__actions-buttons">
-                        <Button
-                            type="button"
-                            class="roadmap-add-module-btn"
-                            icon="pi pi-plus"
-                            label="Novo módulo"
-                            @click="openModuleDialog"
-                        />
-                    </div>
-                </div>
-            </section>
+                    <Button
+                        type="button"
+                        class="roadmap-add-module-btn"
+                        icon="pi pi-plus"
+                        label="Novo módulo"
+                        @click="openModuleDialog"
+                    />
+                </template>
+            </RoadmapPageHeader>
+
+            <p class="roadmap-matrix-hint">
+                Colunas = prioridade · linhas = módulos · arraste cards entre células para reorganizar.
+            </p>
 
             <section class="roadmap-section">
                 <div class="roadmap-matrix-wrap">

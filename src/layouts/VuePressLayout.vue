@@ -24,21 +24,23 @@ const { allProducts } = useRoadmapProducts(roadmapType);
 
 const sidebarGroups = computed(() => {
     if (props.home) return null;
+
     const base = resolveSidebar(route.path);
     if (!base) return null;
 
-    if (!route.path.match(/^\/roadmap\/[^/]+$/) || route.path.includes('/desenvolvimento')) return base;
+    const onMatrix = route.path.match(/^\/roadmap\/[^/]+$/) && !route.path.includes('/desenvolvimento');
+    if (!onMatrix) return base;
 
-    return base.map((group) => {
-        if (group.text !== 'Módulos') return group;
-        return {
-            ...group,
+    return [
+        ...base,
+        {
+            text: 'Módulos',
             items: allProducts.value.map((product) => ({
                 text: product.title,
                 link: `${roadmapMatrixPath(roadmapType.value)}#product-${product.id}`
             }))
-        };
-    });
+        }
+    ];
 });
 
 function toggleAppearance() {

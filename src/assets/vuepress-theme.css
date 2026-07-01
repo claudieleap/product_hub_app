@@ -631,8 +631,8 @@ a {
 
 .dark .home-page {
     --hub-ink: rgba(255, 255, 255, 0.87);
-    --hub-ink-soft: rgba(255, 255, 255, 0.6);
-    --hub-muted: rgba(255, 255, 255, 0.38);
+    --hub-ink-soft: rgba(255, 255, 255, 0.65);
+    --hub-muted: rgba(255, 255, 255, 0.55);
     --hub-line: rgba(255, 255, 255, 0.12);
     --hub-bg: #121212;
     --hub-surface: #1e1e1e;

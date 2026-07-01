@@ -1,5 +1,6 @@
 /**
- * Itens já entregues no Aleevia V2 (web_v2 + api_v2) — removidos do roadmap.
+ * Dados iniciais do roadmap SaaS — usado apenas pelo script de migração da API
+ * (`product_hub_api/scripts/export-roadmap-state.mjs`). O app carrega tudo via endpoint.
  */
 export const IMPLEMENTED_SEED_IDS = [
     'rm-seed-cadastro-clinicas',

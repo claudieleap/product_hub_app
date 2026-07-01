@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import RoadmapTabs from '@/components/RoadmapTabs.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
@@ -15,11 +16,26 @@ import {
     getMetricLabels
 } from '@/data/roadmapMetrics';
 import '@/assets/home.css';
-import { roadmapReady, roadmapSyncError, publishRoadmapState } from '@/composables/roadmapLoader';
-import { isRoadmapApiEnabled } from '@/api/roadmapClient';
+import { getRoadmapReady, getRoadmapSyncError } from '@/composables/roadmapLoader';
+import { useKanbanDrag } from '@/composables/useKanbanDrag';
+import { getRoadmapTypeMeta, parseRoadmapType, roadmapDevPath } from '@/config/roadmapTypes';
 
-const { getCellItems, addItem, removeItem, removeItemsByProduct, updateItem, saveItemFields, moveItemToPriority, items, countByProduct, countByPriority } = useRoadmapMatrix();
-const { allProducts, customProducts, getProductById, addProduct, removeCustomProduct, updateCustomProduct } = useRoadmapProducts();
+const props = defineProps({
+    type: {
+        type: String,
+        default: 'saas'
+    }
+});
+
+const route = useRoute();
+const roadmapType = computed(() => parseRoadmapType(props.type || route.params.type));
+const typeMeta = computed(() => getRoadmapTypeMeta(roadmapType.value));
+const roadmapReady = computed(() => getRoadmapReady(roadmapType.value).value);
+const roadmapSyncError = computed(() => getRoadmapSyncError(roadmapType.value).value);
+const devBoardPath = computed(() => roadmapDevPath(roadmapType.value));
+
+const { getCellItems, addItem, removeItem, removeItemsByProduct, updateItem, saveItemFields, moveItemToCell, items, countByProduct, countByPriority } = useRoadmapMatrix(roadmapType);
+const { allProducts, getProductById, addProduct, removeModule, upsertProduct } = useRoadmapProducts(roadmapType);
 
 const dialogVisible = ref(false);
 const dialogMode = ref('add');
@@ -69,31 +85,22 @@ const moduleMenuItems = computed(() => {
     ];
 });
 
-const draggingFeatureId = ref(null);
-const dragOverCellKey = ref(null);
-const suppressFeatureClick = ref(false);
+const dragError = ref(null);
+
+const { draggingId: draggingFeatureId, dropTargetKey: dragOverCellKey, suppressClick: suppressFeatureClick, onPointerDown: onCardPointerDown } = useKanbanDrag({
+    async onMove(item, zone) {
+        dragError.value = null;
+
+        try {
+            return await moveItemToCell(item.id, zone.dataset.productId, zone.dataset.priorityId);
+        } catch (error) {
+            dragError.value = error.message || 'Não foi possível mover o item.';
+            return false;
+        }
+    }
+});
 
 const totalFeatures = computed(() => items.value.length);
-
-const publishing = ref(false);
-const publishFeedback = ref(null);
-
-async function publishChanges() {
-    publishing.value = true;
-    publishFeedback.value = null;
-
-    try {
-        await publishRoadmapState(items.value, customProducts.value);
-        publishFeedback.value = { type: 'success', text: 'Alterações publicadas para todos os usuários.' };
-    } catch (error) {
-        publishFeedback.value = {
-            type: 'error',
-            text: error.message || 'Falha ao publicar alterações.'
-        };
-    } finally {
-        publishing.value = false;
-    }
-}
 
 function openAddDialog(product, priority) {
     dialogMode.value = 'add';
@@ -147,62 +154,6 @@ function cellKey(productId, priorityId) {
 
 function isDropTarget(productId, priorityId) {
     return dragOverCellKey.value === cellKey(productId, priorityId);
-}
-
-function onDragStart(event, feature) {
-    draggingFeatureId.value = feature.id;
-    suppressFeatureClick.value = false;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', feature.id);
-    event.dataTransfer.setData('application/x-roadmap-feature', feature.id);
-    event.dataTransfer.dropEffect = 'move';
-}
-
-function onDragEnd() {
-    setTimeout(() => {
-        draggingFeatureId.value = null;
-        dragOverCellKey.value = null;
-    }, 0);
-}
-
-function onDragOver(event, productId, priorityId) {
-    const featureId = draggingFeatureId.value;
-    if (!featureId) return;
-
-    const feature = items.value.find((item) => item.id === featureId);
-    if (!feature || feature.productId !== productId) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.dataTransfer.dropEffect = 'move';
-    dragOverCellKey.value = cellKey(productId, priorityId);
-}
-
-function onDragLeave(productId, priorityId) {
-    if (dragOverCellKey.value === cellKey(productId, priorityId)) {
-        dragOverCellKey.value = null;
-    }
-}
-
-function onDrop(event, productId, priorityId) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const featureId =
-        event.dataTransfer.getData('application/x-roadmap-feature') ||
-        event.dataTransfer.getData('text/plain') ||
-        draggingFeatureId.value;
-
-    if (!featureId) {
-        onDragEnd();
-        return;
-    }
-
-    const moved = moveItemToPriority(featureId, priorityId, productId);
-
-    if (moved) suppressFeatureClick.value = true;
-
-    onDragEnd();
 }
 
 watch(dialogPriority, (priority, previous) => {
@@ -276,7 +227,7 @@ async function confirmRemove() {
 }
 
 function requestRemoveModule(product) {
-    if (!product.custom) return;
+    if (!product) return;
     pendingDeleteModule.value = product;
     deleteModuleConfirmVisible.value = true;
 }
@@ -290,7 +241,7 @@ async function confirmRemoveModule() {
     if (!pendingDeleteModule.value) return;
 
     await removeItemsByProduct(pendingDeleteModule.value.id);
-    await removeCustomProduct(pendingDeleteModule.value.id);
+    await removeModule(pendingDeleteModule.value.id);
     cancelRemoveModule();
 }
 
@@ -305,7 +256,7 @@ function openModuleDialog() {
 }
 
 function openEditModuleDialog(product) {
-    if (!product?.custom) return;
+    if (!product) return;
 
     moduleDialogMode.value = 'edit';
     editingModuleId.value = product.id;
@@ -344,7 +295,7 @@ async function confirmSaveModule() {
 
     if (!editingModuleId.value) return;
 
-    const updated = await updateCustomProduct(editingModuleId.value, {
+    const updated = await upsertProduct(editingModuleId.value, {
         title: moduleTitle.value,
         description: moduleDescription.value,
         icon: moduleIcon.value,
@@ -367,15 +318,14 @@ async function confirmSaveModule() {
             <p v-if="roadmapSyncError" class="roadmap-sync-warning">
                 {{ roadmapSyncError }} — exibindo dados locais como fallback.
             </p>
-            <p v-if="publishFeedback" :class="publishFeedback.type === 'success' ? 'roadmap-publish-ok' : 'roadmap-sync-warning'">
-                {{ publishFeedback.text }}
-            </p>
+            <p v-if="dragError" class="roadmap-sync-warning">{{ dragError }}</p>
             <section class="roadmap-page-header vp-doc">
-                <span class="home-hero__eyebrow">Roadmap</span>
+                <span class="home-hero__eyebrow">Roadmap {{ typeMeta.label }}</span>
                 <h1>Matriz de itens</h1>
                 <p class="home-hero__lead">
-                    Colunas = prioridade (Alta, Média, Baixa, Perfumaria). Linhas = módulos de produto.
-                    Adicione itens em cada célula ou arraste cards entre colunas para mudar a prioridade.
+                    {{ typeMeta.description }}
+                    Colunas = prioridade (Alta, Média, Baixa, Perfumaria). Linhas = módulos.
+                    Adicione itens em cada célula ou arraste cards entre colunas e módulos para reorganizar o roadmap.
                 </p>
                 <RoadmapTabs />
                 <div class="roadmap-page-header__actions">
@@ -385,18 +335,6 @@ async function confirmSaveModule() {
                         <span class="roadmap-stat"><b>{{ ROADMAP_PRIORITIES.length }}</b> níveis</span>
                     </div>
                     <div class="roadmap-page-header__actions-buttons">
-                        <Button
-                            v-if="isRoadmapApiEnabled()"
-                            type="button"
-                            class="roadmap-publish-btn"
-                            icon="pi pi-cloud-upload"
-                            :label="publishing ? 'Publicando…' : 'Publicar alterações'"
-                            :loading="publishing"
-                            :disabled="publishing"
-                            severity="secondary"
-                            outlined
-                            @click="publishChanges"
-                        />
                         <Button
                             type="button"
                             class="roadmap-add-module-btn"
@@ -414,7 +352,7 @@ async function confirmSaveModule() {
                         class="roadmap-matrix"
                         :style="{ gridTemplateColumns: `200px repeat(${ROADMAP_PRIORITIES.length}, minmax(200px, 1fr))` }"
                     >
-                        <div class="roadmap-matrix__corner">Produto ↓ · Prioridade →</div>
+                        <div class="roadmap-matrix__corner">Módulo ↓ · Prioridade →</div>
 
                         <div
                             v-for="priority in ROADMAP_PRIORITIES"
@@ -440,7 +378,6 @@ async function confirmSaveModule() {
                                     <span class="roadmap-row-label__title">{{ product.title }}</span>
                                     <span class="roadmap-col-header__count">{{ countByProduct(product.id) }}</span>
                                     <button
-                                        v-if="product.custom"
                                         type="button"
                                         class="roadmap-module__menu"
                                         title="Opções do módulo"
@@ -458,23 +395,25 @@ async function confirmSaveModule() {
                                 :key="`${product.id}-${priority.id}`"
                                 class="roadmap-cell"
                                 :class="{ 'roadmap-cell--drop-target': isDropTarget(product.id, priority.id) }"
-                                @dragenter.prevent
-                                @dragover.capture="onDragOver($event, product.id, priority.id)"
-                                @dragleave="onDragLeave(product.id, priority.id)"
-                                @drop.prevent="onDrop($event, product.id, priority.id)"
+                                data-drop-zone
+                                :data-zone-key="cellKey(product.id, priority.id)"
+                                :data-product-id="product.id"
+                                :data-priority-id="priority.id"
                             >
+                                <div
+                                    v-if="draggingFeatureId && isDropTarget(product.id, priority.id)"
+                                    class="roadmap-cell__drop-hint"
+                                >
+                                    Soltar aqui
+                                </div>
                                 <div
                                     v-for="feature in getCellItems(product.id, priority.id)"
                                     :key="feature.id"
                                     class="roadmap-feature"
                                     :class="{ 'roadmap-feature--dragging': draggingFeatureId === feature.id }"
                                     :style="{ '--feature-accent': product.accent }"
-                                    draggable="true"
-                                    role="button"
-                                    tabindex="0"
-                                    title="Arraste para outra prioridade ou clique para editar"
-                                    @dragstart="onDragStart($event, feature)"
-                                    @dragend="onDragEnd"
+                                    title="Arraste para outra célula ou clique para editar"
+                                    @pointerdown="onCardPointerDown($event, feature)"
                                     @click="openEditDialog(feature, product)"
                                     @keydown.enter="openEditDialog(feature, product)"
                                 >
@@ -497,10 +436,9 @@ async function confirmSaveModule() {
                                     <button
                                         type="button"
                                         class="roadmap-feature__remove"
-                                        draggable="false"
+                                        data-no-drag
                                         title="Remover"
                                         @click.stop="requestRemove(feature)"
-                                        @dragstart.stop
                                     >
                                         <i class="pi pi-times" />
                                     </button>
@@ -758,7 +696,7 @@ async function confirmSaveModule() {
                         </template>
                     </Select>
                     <small v-if="dialogInDevelopment" class="roadmap-dialog-hint">
-                        Visível na aba <router-link to="/roadmap/desenvolvimento">Desenvolvimento</router-link> para acompanhamento do CEO.
+                        Visível na aba <router-link :to="devBoardPath">Desenvolvimento</router-link> para acompanhamento do CEO.
                     </small>
                 </div>
             </div>

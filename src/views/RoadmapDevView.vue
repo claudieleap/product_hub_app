@@ -1,21 +1,48 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import RoadmapTabs from '@/components/RoadmapTabs.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
 import { ROADMAP_DEV_STATUSES } from '@/data/roadmapDevStatus';
 import { useRoadmapMatrix } from '@/composables/useRoadmapMatrix';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
+import { useKanbanDrag } from '@/composables/useKanbanDrag';
 import { getMetricLabels } from '@/data/roadmapMetrics';
 import '@/assets/home.css';
-import { roadmapReady } from '@/composables/roadmapLoader';
+import { getRoadmapReady } from '@/composables/roadmapLoader';
+import { getRoadmapTypeMeta, parseRoadmapType, roadmapMatrixPath } from '@/config/roadmapTypes';
 
-const { devItems, getDevItemsByStatus, moveItemToDevStatus, updateItem } = useRoadmapMatrix();
-const { allProducts, getProductById } = useRoadmapProducts();
+const props = defineProps({
+    type: {
+        type: String,
+        default: 'saas'
+    }
+});
 
-const draggingId = ref(null);
-const dragOverStatus = ref(null);
-const suppressClick = ref(false);
+const route = useRoute();
+const roadmapType = computed(() => parseRoadmapType(props.type || route.params.type));
+const typeMeta = computed(() => getRoadmapTypeMeta(roadmapType.value));
+const roadmapReady = computed(() => getRoadmapReady(roadmapType.value).value);
+const matrixPath = computed(() => roadmapMatrixPath(roadmapType.value));
+
+const { devItems, getDevItemsByStatus, moveItemToDevStatus, updateItem } = useRoadmapMatrix(roadmapType);
+const { getProductById } = useRoadmapProducts(roadmapType);
+
+const dragError = ref(null);
+
+const { draggingId, dropTargetKey: dragOverStatus, onPointerDown: onCardPointerDown } = useKanbanDrag({
+    async onMove(item, zone) {
+        dragError.value = null;
+
+        try {
+            return await moveItemToDevStatus(item.id, zone.dataset.statusId);
+        } catch (error) {
+            dragError.value = error.message || 'Não foi possível mover o card.';
+            return false;
+        }
+    }
+});
 
 function productTitle(productId) {
     return getProductById(productId)?.title ?? productId;
@@ -37,36 +64,6 @@ function metricSummary(metricIds = []) {
     return getMetricLabels(metricIds).join(' · ');
 }
 
-function onDragStart(event, item) {
-    draggingId.value = item.id;
-    suppressClick.value = false;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', item.id);
-}
-
-function onDragEnd() {
-    draggingId.value = null;
-    dragOverStatus.value = null;
-}
-
-function onDragOver(event, statusId) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-    dragOverStatus.value = statusId;
-}
-
-function onDragLeave(statusId) {
-    if (dragOverStatus.value === statusId) dragOverStatus.value = null;
-}
-
-async function onDrop(event, statusId) {
-    event.preventDefault();
-    const itemId = draggingId.value ?? event.dataTransfer.getData('text/plain');
-    const moved = await moveItemToDevStatus(itemId, statusId);
-    if (moved) suppressClick.value = true;
-    onDragEnd();
-}
-
 async function removeFromDev(item) {
     await updateItem(item.id, { devStatus: null });
 }
@@ -80,19 +77,21 @@ async function removeFromDev(item) {
             </div>
             <div v-else class="wrap">
                 <section class="roadmap-page-header vp-doc">
-                    <span class="home-hero__eyebrow">Roadmap</span>
+                    <span class="home-hero__eyebrow">Roadmap {{ typeMeta.label }}</span>
                     <h1>Board de desenvolvimento</h1>
                     <p class="home-hero__lead">
-                        Visão executiva do que saiu da matriz para execução. Acompanhe o avanço por status e módulo.
+                        Visão executiva do roadmap {{ typeMeta.label.toLowerCase() }} em execução. Arraste os cards entre as colunas para atualizar o status.
                     </p>
                     <RoadmapTabs />
                 </section>
+
+                <p v-if="dragError" class="roadmap-sync-warning">{{ dragError }}</p>
 
                 <section v-if="!devItems.length" class="roadmap-dev-empty">
                     <i class="pi pi-inbox" />
                     <h3>Nenhum item em desenvolvimento</h3>
                     <p>
-                        Na <router-link to="/roadmap">matriz do roadmap</router-link>, edite um item e marque
+                        Na <router-link :to="matrixPath">matriz do roadmap</router-link>, edite um item e marque
                         <strong>Enviar para desenvolvimento</strong> para ele aparecer aqui.
                     </p>
                 </section>
@@ -104,9 +103,6 @@ async function removeFromDev(item) {
                         :id="`dev-${status.id}`"
                         class="roadmap-dev-column"
                         :class="[status.rowClass, { 'roadmap-dev-column--drop-target': dragOverStatus === status.id }]"
-                        @dragover="onDragOver($event, status.id)"
-                        @dragleave="onDragLeave(status.id)"
-                        @drop="onDrop($event, status.id)"
                     >
                         <header class="roadmap-dev-column__head">
                             <span class="roadmap-dev-column__title">
@@ -116,24 +112,34 @@ async function removeFromDev(item) {
                             <span class="roadmap-dev-column__count">{{ getDevItemsByStatus(status.id).length }}</span>
                         </header>
 
-                        <div class="roadmap-dev-column__body">
+                        <div
+                            class="roadmap-dev-column__body"
+                            data-drop-zone
+                            :data-zone-key="status.id"
+                            :data-status-id="status.id"
+                        >
+                            <div
+                                v-if="draggingId && dragOverStatus === status.id"
+                                class="roadmap-dev-column__drop-hint"
+                            >
+                                Soltar aqui
+                            </div>
                             <article
                                 v-for="item in getDevItemsByStatus(status.id)"
                                 :key="item.id"
                                 class="roadmap-dev-card"
                                 :class="{ 'roadmap-dev-card--dragging': draggingId === item.id }"
                                 :style="{ '--feature-accent': productAccent(item.productId) }"
-                                draggable="true"
-                                @dragstart="onDragStart($event, item)"
-                                @dragend="onDragEnd"
+                                title="Arraste para outra coluna"
+                                @pointerdown="onCardPointerDown($event, item)"
                             >
                                 <div class="roadmap-dev-card__top">
                                     <span class="roadmap-dev-card__module">{{ productTitle(item.productId) }}</span>
                                     <button
                                         type="button"
                                         class="roadmap-dev-card__remove"
+                                        data-no-drag
                                         title="Remover do desenvolvimento"
-                                        draggable="false"
                                         @click.stop="removeFromDev(item)"
                                     >
                                         <i class="pi pi-times" />

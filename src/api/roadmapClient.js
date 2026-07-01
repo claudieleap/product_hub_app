@@ -1,4 +1,6 @@
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+import { resolveApiBaseUrl } from '@/api/apiBaseUrl';
+
+const baseUrl = resolveApiBaseUrl();
 
 export function isRoadmapApiEnabled() {
     return Boolean(baseUrl);

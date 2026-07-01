@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
-import RoadmapTabs from '@/components/RoadmapTabs.vue';
+import RoadmapPageHeader from '@/components/RoadmapPageHeader.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
 import { ROADMAP_DEV_STATUSES } from '@/data/roadmapDevStatus';
 import { useRoadmapMatrix } from '@/composables/useRoadmapMatrix';
@@ -76,14 +76,11 @@ async function removeFromDev(item) {
                 <p>Carregando roadmap...</p>
             </div>
             <div v-else class="wrap">
-                <section class="roadmap-page-header vp-doc">
-                    <span class="home-hero__eyebrow">Roadmap {{ typeMeta.label }}</span>
-                    <h1>Board de desenvolvimento</h1>
-                    <p class="home-hero__lead">
-                        Visão executiva do roadmap {{ typeMeta.label.toLowerCase() }} em execução. Arraste os cards entre as colunas para atualizar o status.
-                    </p>
-                    <RoadmapTabs />
-                </section>
+                <RoadmapPageHeader
+                    view="dev"
+                    title="Board de desenvolvimento"
+                    lead="Arraste os cards entre as colunas para atualizar o status."
+                />
 
                 <p v-if="dragError" class="roadmap-sync-warning">{{ dragError }}</p>
 

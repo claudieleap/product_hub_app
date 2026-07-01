@@ -4,10 +4,11 @@ import fs from 'node:fs';
 
 const file = process.argv[2];
 const baseUrl = (process.env.VITE_API_BASE_URL || process.argv[3] || '').replace(/\/$/, '');
+const roadmapType = process.env.ROADMAP_TYPE || process.argv[5] || 'saas';
 const apiKey = process.env.VITE_API_KEY || process.argv[4] || '';
 
 if (!file) {
-    console.error('Uso: node scripts/push-roadmap.mjs <export.json> [API_BASE_URL] [API_KEY]');
+    console.error('Uso: node scripts/push-roadmap.mjs <export.json> [API_BASE_URL] [API_KEY] [tipo]');
     console.error('Ou defina VITE_API_BASE_URL e VITE_API_KEY no ambiente.');
     process.exit(1);
 }
@@ -28,7 +29,7 @@ const headers = {
         headers['X-API-Key'] = apiKey;
     }
 
-    const response = await fetch(`${baseUrl}/roadmap/sync`, {
+    const response = await fetch(`${baseUrl}/roadmap/${roadmapType}/sync`, {
         method: 'POST',
         headers,
     body: JSON.stringify(payload)
@@ -49,6 +50,6 @@ if (!response.ok) {
 
 const data = body?.data ?? body;
 console.log(
-    `Roadmap sincronizado: ${data?.items?.length ?? payload.items?.length ?? 0} itens, ` +
+    `Roadmap ${roadmapType} sincronizado: ${data?.items?.length ?? payload.items?.length ?? 0} itens, ` +
         `${data?.customProducts?.length ?? payload.customProducts?.length ?? 0} módulos.`
 );

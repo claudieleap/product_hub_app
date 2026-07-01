@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { isNavActive, nav, resolveSidebar } from '@/config/site';
+import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
 
 const props = defineProps({
@@ -18,14 +19,15 @@ const mobileMenuOpen = ref(false);
 
 const ASIDE_STORAGE_KEY = 'vp-aside-collapsed';
 
-const { allProducts } = useRoadmapProducts();
+const roadmapType = computed(() => parseRoadmapTypeFromPath(route.path));
+const { allProducts } = useRoadmapProducts(roadmapType);
 
 const sidebarGroups = computed(() => {
     if (props.home) return null;
     const base = resolveSidebar(route.path);
     if (!base) return null;
 
-    if (!route.path.startsWith('/roadmap') || route.path.startsWith('/roadmap/desenvolvimento')) return base;
+    if (!route.path.match(/^\/roadmap\/[^/]+$/) || route.path.includes('/desenvolvimento')) return base;
 
     return base.map((group) => {
         if (group.text !== 'Módulos') return group;
@@ -33,7 +35,7 @@ const sidebarGroups = computed(() => {
             ...group,
             items: allProducts.value.map((product) => ({
                 text: product.title,
-                link: `/roadmap#product-${product.id}`
+                link: `${roadmapMatrixPath(roadmapType.value)}#product-${product.id}`
             }))
         };
     });
@@ -194,7 +196,7 @@ onUnmounted(() => {
                 <slot />
             </main>
 
-            <footer class="vp-footer">Aleevia · Hub de Produto · land → expand → monetize</footer>
+            <footer class="vp-footer">Aleevia · Product Hub · estratégia compartilhada</footer>
         </div>
     </div>
 </template>

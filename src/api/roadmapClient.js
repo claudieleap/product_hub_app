@@ -37,25 +37,43 @@ async function request(method, path, body) {
     return payload?.data ?? null;
 }
 
-export const roadmapApi = {
-    getState: () => request('GET', '/roadmap/state'),
+function prefixForType(type) {
+    return `/roadmap/${type}`;
+}
 
-    importState: (state) => request('POST', '/roadmap/import', state),
+export function createRoadmapApi(type) {
+    const prefix = prefixForType(type);
 
-    syncState: (state) => request('POST', '/roadmap/sync', state),
+    return {
+        getState: () => request('GET', `${prefix}/state`),
 
-    createItem: (item) => request('POST', '/roadmap/items', item),
+        importState: (state) => request('POST', `${prefix}/import`, state),
 
-    updateItem: (id, patch) => request('PUT', `/roadmap/items/${encodeURIComponent(id)}`, patch),
+        syncState: (state) => request('POST', `${prefix}/sync`, state),
 
-    deleteItem: (id) => request('DELETE', `/roadmap/items/${encodeURIComponent(id)}`),
+        createItem: (item) => request('POST', `${prefix}/items`, item),
 
-    deleteItemsByProduct: (productId) =>
-        request('DELETE', `/roadmap/products/${encodeURIComponent(productId)}/items`),
+        updateItem: (id, patch) => request('PUT', `${prefix}/items/${encodeURIComponent(id)}`, patch),
 
-    createProduct: (product) => request('POST', '/roadmap/products', product),
+        deleteItem: (id) => request('DELETE', `${prefix}/items/${encodeURIComponent(id)}`),
 
-    updateProduct: (id, patch) => request('PUT', `/roadmap/products/${encodeURIComponent(id)}`, patch),
+        deleteItemsByProduct: (productId) =>
+            request('DELETE', `${prefix}/products/${encodeURIComponent(productId)}/items`),
 
-    deleteProduct: (id) => request('DELETE', `/roadmap/products/${encodeURIComponent(id)}`)
-};
+        createProduct: (product) => request('POST', `${prefix}/products`, product),
+
+        updateProduct: (id, patch) => request('PUT', `${prefix}/products/${encodeURIComponent(id)}`, patch),
+
+        deleteProduct: (id) => request('DELETE', `${prefix}/products/${encodeURIComponent(id)}`)
+    };
+}
+
+const apiCache = new Map();
+
+export function getRoadmapApi(type) {
+    if (!apiCache.has(type)) {
+        apiCache.set(type, createRoadmapApi(type));
+    }
+
+    return apiCache.get(type);
+}

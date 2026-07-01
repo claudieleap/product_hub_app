@@ -1,57 +1,70 @@
-import { computed, ref } from 'vue';
-import { roadmapApi, isRoadmapApiEnabled } from '@/api/roadmapClient';
-import { ROADMAP_SEED_ITEMS } from '@/data/roadmapSeedData';
-import {
-    ensureRoadmapLoaded,
-    persistMatrixFallback,
-    trackDeletedSeed
-} from '@/composables/roadmapLoader';
+import { computed, ref, unref } from 'vue';
+import { getRoadmapApi, isRoadmapApiEnabled } from '@/api/roadmapClient';
+import { parseRoadmapType } from '@/config/roadmapTypes';
+import { ensureRoadmapLoaded } from '@/composables/roadmapLoader';
 
-const seedIds = new Set(ROADMAP_SEED_ITEMS.map((seed) => seed.id));
+const matrixStores = new Map();
 
-const items = ref([]);
-const isHydrated = ref(false);
+function createMatrixStore(roadmapTypeInput) {
+    const roadmapType = parseRoadmapType(unref(roadmapTypeInput));
+    const items = ref([]);
+    const isHydrated = ref(false);
+    const api = getRoadmapApi(roadmapType);
 
-ensureRoadmapLoaded().then((state) => {
-    items.value = state.items;
-    isHydrated.value = true;
-});
+    ensureRoadmapLoaded(roadmapType).then((state) => {
+        items.value = (state.items ?? []).map(normalizeItem);
+        isHydrated.value = true;
+    });
 
-function persist(itemsList) {
-    persistMatrixFallback(itemsList);
-}
+    function persist() {
+        /* estado persistido pela API em cada operação */
+    }
 
-function normalizeItemFields({ title, notes, metrics, priority, devStatus }) {
-    return {
-        title: title?.trim() ?? '',
-        notes: notes?.trim() ?? '',
-        metrics: Array.isArray(metrics) ? [...metrics] : [],
-        priority,
-        devStatus: devStatus || null
-    };
-}
+    function normalizeMetrics(metrics) {
+        if (Array.isArray(metrics)) return [...metrics];
+        if (typeof metrics === 'string' && metrics.trim()) {
+            return metrics.trim().split(/\s+/);
+        }
+        return [];
+    }
 
-async function apiCreateItem(entry) {
-    if (!isRoadmapApiEnabled()) return entry;
-    return roadmapApi.createItem(entry);
-}
+    function normalizeItemFields({ title, notes, metrics, priority, devStatus }) {
+        return {
+            title: title?.trim() ?? '',
+            notes: notes?.trim() ?? '',
+            metrics: normalizeMetrics(metrics),
+            priority,
+            devStatus: devStatus || null
+        };
+    }
 
-async function apiUpdateItem(id, patch) {
-    if (!isRoadmapApiEnabled()) return;
-    await roadmapApi.updateItem(id, patch);
-}
+    function normalizeItem(item) {
+        return {
+            ...item,
+            metrics: normalizeMetrics(item.metrics)
+        };
+    }
 
-async function apiDeleteItem(id) {
-    if (!isRoadmapApiEnabled()) return;
-    await roadmapApi.deleteItem(id);
-}
+    async function apiCreateItem(entry) {
+        if (!isRoadmapApiEnabled()) return entry;
+        return api.createItem(entry);
+    }
 
-async function apiDeleteItemsByProduct(productId) {
-    if (!isRoadmapApiEnabled()) return;
-    await roadmapApi.deleteItemsByProduct(productId);
-}
+    async function apiUpdateItem(id, patch) {
+        if (!isRoadmapApiEnabled()) return;
+        await api.updateItem(id, patch);
+    }
 
-export function useRoadmapMatrix() {
+    async function apiDeleteItem(id) {
+        if (!isRoadmapApiEnabled()) return;
+        await api.deleteItem(id);
+    }
+
+    async function apiDeleteItemsByProduct(productId) {
+        if (!isRoadmapApiEnabled()) return;
+        await api.deleteItemsByProduct(productId);
+    }
+
     const itemsByCell = computed(() => {
         const map = {};
         for (const item of items.value) {
@@ -104,37 +117,29 @@ export function useRoadmapMatrix() {
         }
 
         items.value = [...items.value, entry];
-        persist(items.value);
+        persist();
         return entry;
     }
 
     async function removeItem(id) {
         if (isRoadmapApiEnabled()) {
             await apiDeleteItem(id);
-        } else if (seedIds.has(id)) {
-            await trackDeletedSeed(id);
         }
 
         items.value = items.value.filter((item) => item.id !== id);
-        persist(items.value);
+        persist();
     }
 
     async function removeItemsByProduct(productId) {
-        const ids = items.value.filter((item) => item.productId === productId).map((item) => item.id);
+        const count = items.value.filter((item) => item.productId === productId).length;
 
         if (isRoadmapApiEnabled()) {
             await apiDeleteItemsByProduct(productId);
-        } else {
-            for (const id of ids) {
-                if (seedIds.has(id)) {
-                    await trackDeletedSeed(id);
-                }
-            }
         }
 
         items.value = items.value.filter((item) => item.productId !== productId);
-        persist(items.value);
-        return ids.length;
+        persist();
+        return count;
     }
 
     async function updateItem(id, patch) {
@@ -154,19 +159,25 @@ export function useRoadmapMatrix() {
 
         const next = { ...current, ...merged, productId };
 
+        items.value = items.value.map((item) => (item.id === id ? next : item));
+
         if (isRoadmapApiEnabled()) {
-            await apiUpdateItem(id, {
-                productId: next.productId,
-                priority: next.priority,
-                title: next.title,
-                notes: next.notes,
-                metrics: next.metrics,
-                devStatus: next.devStatus
-            });
+            try {
+                await apiUpdateItem(id, {
+                    productId: next.productId,
+                    priority: next.priority,
+                    title: next.title,
+                    notes: next.notes,
+                    metrics: next.metrics,
+                    devStatus: next.devStatus
+                });
+            } catch (error) {
+                items.value = items.value.map((item) => (item.id === id ? current : item));
+                throw error;
+            }
         }
 
-        items.value = items.value.map((item) => (item.id === id ? next : item));
-        persist(items.value);
+        persist();
         return true;
     }
 
@@ -177,10 +188,20 @@ export function useRoadmapMatrix() {
     async function moveItemToPriority(id, priority, productId = null) {
         const item = items.value.find((entry) => entry.id === id);
         if (!item) return false;
-        if (productId && productId !== item.productId) return false;
+        if (productId && productId !== item.productId) {
+            return moveItemToCell(id, productId, priority);
+        }
         if (item.priority === priority) return false;
 
         return updateItem(id, { priority });
+    }
+
+    async function moveItemToCell(id, productId, priority) {
+        const item = items.value.find((entry) => entry.id === id);
+        if (!item) return false;
+        if (item.productId === productId && item.priority === priority) return false;
+
+        return updateItem(id, { productId, priority });
     }
 
     async function moveItemToDevStatus(id, devStatus) {
@@ -220,10 +241,21 @@ export function useRoadmapMatrix() {
         updateItem,
         saveItemFields,
         moveItemToPriority,
+        moveItemToCell,
         moveItemToDevStatus,
         setItemInDevelopment,
         countByProduct,
         countByPriority,
         countDevByProduct
     };
+}
+
+export function useRoadmapMatrix(roadmapType = 'saas') {
+    const type = parseRoadmapType(unref(roadmapType));
+
+    if (!matrixStores.has(type)) {
+        matrixStores.set(type, createMatrixStore(type));
+    }
+
+    return matrixStores.get(type);
 }

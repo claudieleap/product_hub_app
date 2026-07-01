@@ -1,61 +1,92 @@
 <script setup>
-import { useRouter } from 'vue-router';
-
-const router = useRouter();
-
-const features = [
-    {
-        title: 'Roadmap de Produto',
-        description: 'Matriz de itens por módulo e prioridade. Organize o que construir e quando.',
-        icon: 'pi pi-th-large',
-        color: '#6e47c9',
-        to: { name: 'roadmap' }
-    },
-    {
-        title: 'Board de Desenvolvimento',
-        description: 'Kanban por status de implementação — a fazer, em andamento e concluído.',
-        icon: 'pi pi-list-check',
-        color: '#1e4fe0',
-        to: { name: 'roadmap-dev' }
-    },
-    {
-        title: 'Status da API',
-        description: 'Verifique a conexão com o backend product_hub_api.',
-        icon: 'pi pi-server',
-        color: '#0e9e92',
-        to: { name: 'status' }
-    }
-];
+import VuePressLayout from '@/layouts/VuePressLayout.vue';
+import { ROADMAP_TYPES, roadmapDevPath, roadmapMatrixPath } from '@/config/roadmapTypes';
+import '@/assets/home.css';
 </script>
 
 <template>
-    <section class="space-y-8">
-        <div class="space-y-3">
-            <p class="text-sm font-semibold uppercase tracking-wide text-primary">Aleevia</p>
-            <h1 class="text-4xl font-bold tracking-tight text-surface-900">Product Hub</h1>
-            <p class="max-w-2xl text-lg text-surface-600">
-                Central de estratégia de produto com roadmap compartilhado via API. Tudo sincronizado entre
-                equipe e ambientes.
-            </p>
-        </div>
+    <VuePressLayout home>
+        <div class="home-page hub-home">
+            <div class="hub-home__glow" aria-hidden="true" />
 
-        <div class="grid gap-4 md:grid-cols-3">
-            <router-link
-                v-for="feature in features"
-                :key="feature.title"
-                :to="feature.to"
-                class="rounded-2xl border border-surface-200 bg-white p-5 shadow-sm no-underline text-inherit transition hover:border-primary-200 hover:shadow-md"
-            >
-                <div
-                    class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-white"
-                    :style="{ background: feature.color }"
-                >
-                    <i :class="feature.icon" />
-                </div>
-                <h2 class="text-lg font-semibold text-surface-900">{{ feature.title }}</h2>
-                <p class="mt-2 text-sm text-surface-600">{{ feature.description }}</p>
-                <span class="mt-4 inline-block text-sm font-medium text-primary">Acessar →</span>
-            </router-link>
+            <div class="wrap">
+                <section class="hub-home__hero home-hero">
+                    <p class="home-hero__eyebrow">Aleevia · Estratégia de produto</p>
+                    <h1>Product Hub</h1>
+                    <p class="home-hero__lead">
+                        Um lugar para toda a empresa <b>ver, priorizar e acompanhar</b> o que estamos
+                        construindo — em três frentes independentes, sempre atualizadas.
+                    </p>
+                </section>
+
+                <section class="hub-home__cards" aria-label="Roadmaps">
+                    <article
+                        v-for="roadmap in ROADMAP_TYPES"
+                        :key="roadmap.id"
+                        class="hub-home-card"
+                        :class="`hub-home-card--${roadmap.id}`"
+                        :style="{
+                            '--card-accent': roadmap.color,
+                            '--card-wash': roadmap.wash
+                        }"
+                    >
+                        <div class="hub-home-card__head">
+                            <span class="hub-home-card__icon" :style="{ background: roadmap.color }">
+                                <i :class="roadmap.icon" />
+                            </span>
+                            <div>
+                                <p class="hub-home-card__tagline">{{ roadmap.tagline }}</p>
+                                <h2 class="hub-home-card__title">Roadmap {{ roadmap.label }}</h2>
+                            </div>
+                        </div>
+
+                        <p class="hub-home-card__desc">{{ roadmap.description }}</p>
+
+                        <ul class="hub-home-card__highlights">
+                            <li v-for="item in roadmap.highlights" :key="item">
+                                <i class="pi pi-check" />
+                                {{ item }}
+                            </li>
+                        </ul>
+
+                        <div class="hub-home-card__footer">
+                            <router-link :to="roadmapMatrixPath(roadmap.id)" class="hub-home-card__cta">
+                                Abrir matriz
+                                <i class="pi pi-arrow-right" />
+                            </router-link>
+                            <router-link :to="roadmapDevPath(roadmap.id)" class="hub-home-card__secondary">
+                                Board de desenvolvimento
+                            </router-link>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="hub-home__guide">
+                    <h2 class="hub-home__guide-title">Como acompanhar</h2>
+                    <div class="hub-home__guide-grid">
+                        <article class="hub-home__guide-item">
+                            <span class="hub-home__guide-num">1</span>
+                            <div>
+                                <h3>Matriz de prioridades</h3>
+                                <p>
+                                    Veja o que está em Alta, Média, Baixa ou Perfumaria, organizado por módulo.
+                                    Ideal para alinhar estratégia com produto e liderança.
+                                </p>
+                            </div>
+                        </article>
+                        <article class="hub-home__guide-item">
+                            <span class="hub-home__guide-num">2</span>
+                            <div>
+                                <h3>Board de desenvolvimento</h3>
+                                <p>
+                                    Acompanhe o que saiu da matriz para execução — a fazer, em andamento e concluído.
+                                    Visão executiva do avanço real.
+                                </p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+            </div>
         </div>
-    </section>
+    </VuePressLayout>
 </template>

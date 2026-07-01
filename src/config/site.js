@@ -1,54 +1,82 @@
-import { ROADMAP_PRODUCTS } from '@/data/roadmapProducts';
+import { ROADMAP_TYPES } from '@/config/roadmapTypes';
+import { getRoadmapProducts } from '@/data/roadmapProductsByType';
+import { roadmapDevPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 
 export const siteTitle = 'Product Hub';
-export const siteDescription = 'Roadmap de produto e estratégia Aleevia';
+export const siteDescription = 'Roadmaps SaaS, Interno e BPO — estratégia Aleevia';
 
 export const nav = [
-    { text: 'Home', link: '/', match: /^\/$/, icon: 'pi pi-home' },
-    { text: 'Roadmap', link: '/roadmap', match: /^\/roadmap/, icon: 'pi pi-map' },
-    { text: 'Status API', link: '/status', match: /^\/status/, icon: 'pi pi-server' }
+    { text: 'Início', link: '/', match: /^\/$/, icon: 'pi pi-home' },
+    ...ROADMAP_TYPES.map((type) => ({
+        text: type.label,
+        link: roadmapMatrixPath(type.id),
+        match: new RegExp(`^/roadmap/${type.id}`),
+        icon: type.icon
+    }))
 ];
 
-export const sidebar = {
-    '/roadmap': [
+function buildRoadmapSidebar(type) {
+    const products = getRoadmapProducts(type);
+    const matrixPath = roadmapMatrixPath(type);
+    const devPath = roadmapDevPath(type);
+
+    return [
         {
             text: 'Roadmap',
             items: [
-                { text: 'Matriz', link: '/roadmap' },
-                { text: 'Desenvolvimento', link: '/roadmap/desenvolvimento' }
+                { text: 'Matriz', link: matrixPath },
+                { text: 'Desenvolvimento', link: devPath }
             ]
+        },
+        {
+            text: 'Tipos',
+            items: ROADMAP_TYPES.map((entry) => ({
+                text: entry.label,
+                link: roadmapMatrixPath(entry.id)
+            }))
         },
         {
             text: 'Módulos',
-            items: ROADMAP_PRODUCTS.map((product) => ({
+            items: products.map((product) => ({
                 text: product.title,
-                link: `/roadmap#product-${product.id}`
+                link: `${matrixPath}#product-${product.id}`
             }))
         }
-    ],
-    '/roadmap/desenvolvimento': [
-        {
-            text: 'Roadmap',
-            items: [
-                { text: 'Matriz', link: '/roadmap' },
-                { text: 'Desenvolvimento', link: '/roadmap/desenvolvimento' }
-            ]
-        },
-        {
-            text: 'Status',
-            items: [
-                { text: 'A fazer', link: '/roadmap/desenvolvimento#dev-a_fazer' },
-                { text: 'Em andamento', link: '/roadmap/desenvolvimento#dev-em_andamento' },
-                { text: 'Concluído', link: '/roadmap/desenvolvimento#dev-concluido' }
-            ]
-        }
+    ];
+}
+
+const devSidebarExtras = {
+    text: 'Status',
+    items: [
+        { text: 'A fazer', link: '#dev-a_fazer' },
+        { text: 'Em andamento', link: '#dev-em_andamento' },
+        { text: 'Concluído', link: '#dev-concluido' }
     ]
 };
 
 export function resolveSidebar(path) {
-    if (path.startsWith('/roadmap/desenvolvimento')) return sidebar['/roadmap/desenvolvimento'];
-    if (path.startsWith('/roadmap')) return sidebar['/roadmap'];
-    return null;
+    const match = path.match(/^\/roadmap\/([^/]+)(?:\/desenvolvimento)?/);
+    if (!match) return null;
+
+    const type = match[1];
+    const base = buildRoadmapSidebar(type);
+
+    if (path.includes('/desenvolvimento')) {
+        const devPath = roadmapDevPath(type);
+        return [
+            base[0],
+            base[1],
+            {
+                ...devSidebarExtras,
+                items: devSidebarExtras.items.map((item) => ({
+                    ...item,
+                    link: `${devPath}${item.link}`
+                }))
+            }
+        ];
+    }
+
+    return base;
 }
 
 export function isNavActive(item, path) {

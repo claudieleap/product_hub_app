@@ -212,11 +212,35 @@ a {
     background: var(--vp-c-brand-soft);
 }
 
+.vp-aside__nav-link--featured {
+    margin: 6px 0 8px;
+    font-weight: 700;
+    color: #168a5a;
+    background: #e8f8f0;
+    border: 1px solid #b8e6cf;
+}
+
+.vp-aside__nav-link--featured:hover {
+    color: #12804f;
+    background: #d4f0e3;
+}
+
+.vp-aside__nav-link--featured.active {
+    color: #0f6b42;
+    background: #c8ebda;
+    border-color: #8fd4b0;
+}
+
 .vp-aside__nav-icon {
     flex: none;
     width: 18px;
     text-align: center;
     font-size: 15px;
+}
+
+.vp-aside__nav-icon .guava-icon {
+    width: 18px;
+    height: 18px;
 }
 
 .vp-aside__nav-label {

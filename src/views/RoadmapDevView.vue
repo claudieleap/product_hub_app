@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import RoadmapPageHeader from '@/components/RoadmapPageHeader.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
@@ -8,10 +8,10 @@ import { ROADMAP_DEV_STATUSES } from '@/data/roadmapDevStatus';
 import { useRoadmapMatrix } from '@/composables/useRoadmapMatrix';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
-import { getMetricLabels } from '@/data/roadmapMetrics';
+import { useRoadmapMetrics } from '@/composables/useRoadmapMetrics';
 import '@/assets/home.css';
 import { getRoadmapReady } from '@/composables/roadmapLoader';
-import { getRoadmapTypeMeta, parseRoadmapType, roadmapMatrixPath } from '@/config/roadmapTypes';
+import { ENTREGAS_PATH, getRoadmapTypeMeta, parseRoadmapType, roadmapMatrixPath } from '@/config/roadmapTypes';
 
 const props = defineProps({
     type: {
@@ -21,15 +21,22 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const router = useRouter();
 const roadmapType = computed(() => parseRoadmapType(props.type || route.params.type));
 const typeMeta = computed(() => getRoadmapTypeMeta(roadmapType.value));
 const roadmapReady = computed(() => getRoadmapReady(roadmapType.value).value);
 const matrixPath = computed(() => roadmapMatrixPath(roadmapType.value));
 
-const { devItems, getDevItemsByStatus, moveItemToDevStatus, updateItem } = useRoadmapMatrix(roadmapType);
+const { devItems, getDevItemsByStatus, moveItemToDevStatus, updateItem, finalizeConcludedItems } =
+    useRoadmapMatrix(roadmapType);
 const { getProductById } = useRoadmapProducts(roadmapType);
+const { getMetricLabels } = useRoadmapMetrics();
 
 const dragError = ref(null);
+const finalizeError = ref(null);
+const finalizeLoading = ref(false);
+
+const concludedCount = computed(() => getDevItemsByStatus('concluido').length);
 
 const { draggingId, dropTargetKey: dragOverStatus, onPointerDown: onCardPointerDown } = useKanbanDrag({
     async onMove(item, zone) {
@@ -67,6 +74,30 @@ function metricSummary(metricIds = []) {
 async function removeFromDev(item) {
     await updateItem(item.id, { devStatus: null });
 }
+
+async function handleFinalize() {
+    if (!concludedCount.value || finalizeLoading.value) return;
+
+    const confirmed = window.confirm(
+        `Finalizar ${concludedCount.value} ${concludedCount.value === 1 ? 'item' : 'itens'} em Concluído? ` +
+            'Eles sairão da matriz e do desenvolvimento e irão para Entregas.'
+    );
+    if (!confirmed) return;
+
+    finalizeError.value = null;
+    finalizeLoading.value = true;
+
+    try {
+        const result = await finalizeConcludedItems();
+        if (result?.count > 0) {
+            await router.push(ENTREGAS_PATH);
+        }
+    } catch (error) {
+        finalizeError.value = error.message || 'Não foi possível finalizar as entregas.';
+    } finally {
+        finalizeLoading.value = false;
+    }
+}
 </script>
 
 <template>
@@ -79,10 +110,11 @@ async function removeFromDev(item) {
                 <RoadmapPageHeader
                     view="dev"
                     title="Board de desenvolvimento"
-                    lead="Arraste os cards entre as colunas para atualizar o status."
+                    subtitle="Arraste os cards entre as colunas para atualizar o status."
                 />
 
                 <p v-if="dragError" class="roadmap-sync-warning">{{ dragError }}</p>
+                <p v-if="finalizeError" class="roadmap-sync-warning">{{ finalizeError }}</p>
 
                 <section v-if="!devItems.length" class="roadmap-dev-empty">
                     <i class="pi pi-inbox" />
@@ -102,10 +134,15 @@ async function removeFromDev(item) {
                         :class="[status.rowClass, { 'roadmap-dev-column--drop-target': dragOverStatus === status.id }]"
                     >
                         <header class="roadmap-dev-column__head">
-                            <span class="roadmap-dev-column__title">
-                                <i :class="status.icon" />
-                                {{ status.label }}
-                            </span>
+                            <div class="roadmap-dev-column__head-main">
+                                <span class="roadmap-dev-column__title">
+                                    <i :class="status.icon" />
+                                    {{ status.label }}
+                                </span>
+                                <p v-if="status.description" class="roadmap-dev-column__desc">
+                                    {{ status.description }}
+                                </p>
+                            </div>
                             <span class="roadmap-dev-column__count">{{ getDevItemsByStatus(status.id).length }}</span>
                         </header>
 
@@ -158,6 +195,16 @@ async function removeFromDev(item) {
                                     </span>
                                 </div>
                             </article>
+                            <button
+                                v-if="status.id === 'concluido'"
+                                type="button"
+                                class="roadmap-dev-finalize-btn"
+                                :disabled="!concludedCount || finalizeLoading"
+                                @click="handleFinalize"
+                            >
+                                <i class="pi pi-check-circle" />
+                                {{ finalizeLoading ? 'Finalizando...' : 'Finalizar' }}
+                            </button>
                         </div>
                     </div>
                 </section>

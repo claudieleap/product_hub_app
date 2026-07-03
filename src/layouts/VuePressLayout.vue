@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { isNavActive, nav, resolveSidebar } from '@/config/site';
 import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
+import RoadmapTypeIcon from '@/components/RoadmapTypeIcon.vue';
 
 const props = defineProps({
     /** Home não exibe links de contexto na sidebar */
@@ -145,11 +146,14 @@ onUnmounted(() => {
                     :key="item.text"
                     :to="item.link"
                     class="vp-aside__nav-link"
-                    :class="{ active: isNavActive(item, route.path) }"
+                    :class="{
+                        active: isNavActive(item, route.path),
+                        'vp-aside__nav-link--featured': item.featured
+                    }"
                     :title="item.text"
                     @click="closeMobileMenu"
                 >
-                    <i :class="item.icon" class="vp-aside__nav-icon" aria-hidden="true" />
+                    <RoadmapTypeIcon :icon="item.icon" class="vp-aside__nav-icon" aria-hidden="true" />
                     <span class="vp-aside__nav-label">{{ item.text }}</span>
                 </router-link>
             </nav>

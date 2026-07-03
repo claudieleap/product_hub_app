@@ -66,7 +66,9 @@ export function createRoadmapApi(type) {
 
         updateProduct: (id, patch) => request('PUT', `${prefix}/products/${encodeURIComponent(id)}`, patch),
 
-        deleteProduct: (id) => request('DELETE', `${prefix}/products/${encodeURIComponent(id)}`)
+        deleteProduct: (id) => request('DELETE', `${prefix}/products/${encodeURIComponent(id)}`),
+
+        finalizeDeliveries: () => request('POST', `${prefix}/deliveries/finalize`)
     };
 }
 

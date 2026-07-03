@@ -1,5 +1,5 @@
 import { ROADMAP_TYPES } from '@/config/roadmapTypes';
-import { roadmapDevPath, roadmapMatrixPath } from '@/config/roadmapTypes';
+import { ENTREGAS_PATH, roadmapDevPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 
 export const siteTitle = 'Product Hub';
 export const siteDescription = 'Roadmaps SaaS, Interno e BPO — estratégia Aleevia';
@@ -7,12 +7,25 @@ export const siteDescription = 'Roadmaps SaaS, Interno e BPO — estratégia Ale
 /** Navegação global: tipo de roadmap (único lugar para trocar SaaS / Interno / BPO). */
 export const nav = [
     { text: 'Início', link: '/', match: /^\/$/, icon: 'pi pi-home' },
+    {
+        text: 'Entregas',
+        link: ENTREGAS_PATH,
+        match: /^\/entregas$/,
+        icon: 'pi pi-send',
+        featured: true
+    },
     ...ROADMAP_TYPES.map((type) => ({
         text: type.label,
         link: roadmapMatrixPath(type.id),
         match: new RegExp(`^/roadmap/${type.id}`),
         icon: type.icon
-    }))
+    })),
+    {
+        text: 'Métricas',
+        link: '/configuracoes/metricas',
+        match: /^\/configuracoes\/metricas$/,
+        icon: 'pi pi-chart-bar'
+    }
 ];
 
 const devStatusGroup = (type) => ({

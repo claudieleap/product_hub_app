@@ -3,6 +3,9 @@ import HomeView from '@/views/HomeView.vue';
 import StatusView from '@/views/StatusView.vue';
 import RoadmapView from '@/views/RoadmapView.vue';
 import RoadmapDevView from '@/views/RoadmapDevView.vue';
+import RoadmapBacklogView from '@/views/RoadmapBacklogView.vue';
+import RoadmapEntregasView from '@/views/RoadmapEntregasView.vue';
+import MetricsConfigView from '@/views/MetricsConfigView.vue';
 import { getRoadmapTypeMeta, isRoadmapType } from '@/config/roadmapTypes';
 
 const router = createRouter({
@@ -32,6 +35,15 @@ const router = createRouter({
             }
         },
         {
+            path: '/roadmap/:type/backlog',
+            name: 'roadmap-backlog',
+            component: RoadmapBacklogView,
+            props: true,
+            meta: {
+                title: (route) => `Backlog · Roadmap ${getRoadmapTypeMeta(route.params.type).label}`
+            }
+        },
+        {
             path: '/roadmap/:type/desenvolvimento',
             name: 'roadmap-dev',
             component: RoadmapDevView,
@@ -39,6 +51,22 @@ const router = createRouter({
             meta: {
                 title: (route) => `Desenvolvimento · Roadmap ${getRoadmapTypeMeta(route.params.type).label}`
             }
+        },
+        {
+            path: '/entregas',
+            name: 'entregas',
+            component: RoadmapEntregasView,
+            meta: { title: 'Entregas' }
+        },
+        {
+            path: '/configuracoes/metricas',
+            name: 'config-metricas',
+            component: MetricsConfigView,
+            meta: { title: 'Métricas de sucesso' }
+        },
+        {
+            path: '/roadmap/:type/entregas',
+            redirect: '/entregas'
         },
         {
             path: '/status',

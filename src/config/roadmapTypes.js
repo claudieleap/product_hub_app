@@ -19,7 +19,7 @@ export const ROADMAP_TYPES = [
         highlights: ['Infraestrutura e ferramentas', 'Automações internas', 'Indicadores e BI'],
         color: '#1e4fe0',
         wash: '#eef2fe',
-        icon: 'pi pi-building'
+        icon: 'guava'
     },
     {
         id: 'bpo',
@@ -59,4 +59,14 @@ export function roadmapMatrixPath(type) {
 
 export function roadmapDevPath(type) {
     return `/roadmap/${parseRoadmapType(type)}/desenvolvimento`;
+}
+
+export function roadmapBacklogPath(type) {
+    return `/roadmap/${parseRoadmapType(type)}/backlog`;
+}
+
+export const ENTREGAS_PATH = '/entregas';
+
+export function roadmapEntregasPath() {
+    return ENTREGAS_PATH;
 }

@@ -1,6 +1,7 @@
 import { computed, ref, unref } from 'vue';
 import { getRoadmapApi, isRoadmapApiEnabled } from '@/api/roadmapClient';
 import { parseRoadmapType } from '@/config/roadmapTypes';
+import { BACKLOG_PRIORITY_ID, isBacklogPriority, isMatrixPriority } from '@/data/roadmapProducts';
 import { ensureRoadmapLoaded } from '@/composables/roadmapLoader';
 
 const matrixStores = new Map();
@@ -28,21 +29,37 @@ function createMatrixStore(roadmapTypeInput) {
         return [];
     }
 
-    function normalizeItemFields({ title, notes, metrics, priority, devStatus }) {
+    function normalizeItemFields({ title, notes, metrics, priority, devStatus, backlogPriority }) {
         return {
             title: title?.trim() ?? '',
             notes: notes?.trim() ?? '',
             metrics: normalizeMetrics(metrics),
             priority,
-            devStatus: devStatus || null
+            devStatus: devStatus || null,
+            backlogPriority: backlogPriority || null
         };
     }
 
     function normalizeItem(item) {
-        return {
+        const normalized = {
             ...item,
-            metrics: normalizeMetrics(item.metrics)
+            metrics: normalizeMetrics(item.metrics),
+            deliveredAt: item.deliveredAt || null
         };
+
+        if (isBacklogPriority(normalized.priority) && !normalized.backlogPriority) {
+            normalized.backlogPriority = 'media';
+        }
+
+        if (!isBacklogPriority(normalized.priority)) {
+            normalized.backlogPriority = null;
+        }
+
+        return normalized;
+    }
+
+    function getBacklogTier(item) {
+        return item.backlogPriority || 'media';
     }
 
     async function apiCreateItem(entry) {
@@ -65,9 +82,14 @@ function createMatrixStore(roadmapTypeInput) {
         await api.deleteItemsByProduct(productId);
     }
 
+    function isDelivered(item) {
+        return Boolean(item.deliveredAt);
+    }
+
     const itemsByCell = computed(() => {
         const map = {};
         for (const item of items.value) {
+            if (isDelivered(item) || isBacklogPriority(item.priority)) continue;
             const key = `${item.productId}:${item.priority}`;
             if (!map[key]) map[key] = [];
             map[key].push(item);
@@ -75,7 +97,21 @@ function createMatrixStore(roadmapTypeInput) {
         return map;
     });
 
-    const devItems = computed(() => items.value.filter((item) => item.devStatus));
+    const backlogItems = computed(() =>
+        items.value.filter((item) => isBacklogPriority(item.priority) && !isDelivered(item))
+    );
+
+    const matrixItems = computed(() =>
+        items.value.filter((item) => !isBacklogPriority(item.priority) && !isDelivered(item))
+    );
+
+    const deliveredItems = computed(() =>
+        [...items.value.filter((item) => isDelivered(item))].sort(
+            (a, b) => new Date(b.deliveredAt) - new Date(a.deliveredAt)
+        )
+    );
+
+    const devItems = computed(() => matrixItems.value.filter((item) => item.devStatus));
 
     const devStats = computed(() => {
         const total = devItems.value.length;
@@ -100,8 +136,28 @@ function createMatrixStore(roadmapTypeInput) {
         return devItems.value.filter((item) => item.devStatus === status);
     }
 
-    async function addItem(productId, priority, title, notes = '', metrics = [], devStatus = null) {
-        const fields = normalizeItemFields({ title, notes, metrics, priority, devStatus });
+    function getBacklogItemsByPriority(tier) {
+        return backlogItems.value.filter((item) => getBacklogTier(item) === tier);
+    }
+
+    async function addItem(
+        productId,
+        priority,
+        title,
+        notes = '',
+        metrics = [],
+        devStatus = null,
+        backlogPriority = 'media'
+    ) {
+        const resolvedBacklogPriority = isBacklogPriority(priority) ? backlogPriority : null;
+        const fields = normalizeItemFields({
+            title,
+            notes,
+            metrics,
+            priority,
+            devStatus,
+            backlogPriority: resolvedBacklogPriority
+        });
         if (!fields.title) return null;
 
         const entry = {
@@ -114,9 +170,10 @@ function createMatrixStore(roadmapTypeInput) {
         if (isRoadmapApiEnabled()) {
             const saved = await apiCreateItem(entry);
             entry.id = saved?.id ?? entry.id;
+            entry.backlogPriority = saved?.backlogPriority ?? entry.backlogPriority;
         }
 
-        items.value = [...items.value, entry];
+        items.value = [...items.value, normalizeItem(entry)];
         persist();
         return entry;
     }
@@ -147,12 +204,23 @@ function createMatrixStore(roadmapTypeInput) {
         if (!current) return false;
 
         const productId = patch.productId ?? current.productId;
+        const nextPriority = patch.priority ?? current.priority;
+        let nextBacklogPriority =
+            patch.backlogPriority !== undefined ? patch.backlogPriority : current.backlogPriority;
+
+        if (isBacklogPriority(nextPriority)) {
+            nextBacklogPriority = nextBacklogPriority || 'media';
+        } else {
+            nextBacklogPriority = null;
+        }
+
         const merged = normalizeItemFields({
             title: patch.title ?? current.title,
             notes: patch.notes ?? current.notes ?? '',
             metrics: patch.metrics ?? current.metrics ?? [],
-            priority: patch.priority ?? current.priority,
-            devStatus: patch.devStatus !== undefined ? patch.devStatus : current.devStatus
+            priority: nextPriority,
+            devStatus: patch.devStatus !== undefined ? patch.devStatus : current.devStatus,
+            backlogPriority: nextBacklogPriority
         });
 
         if (!merged.title) return false;
@@ -166,6 +234,7 @@ function createMatrixStore(roadmapTypeInput) {
                 await apiUpdateItem(id, {
                     productId: next.productId,
                     priority: next.priority,
+                    backlogPriority: next.backlogPriority,
                     title: next.title,
                     notes: next.notes,
                     metrics: next.metrics,
@@ -216,12 +285,93 @@ function createMatrixStore(roadmapTypeInput) {
         return updateItem(id, { devStatus: inDevelopment ? devStatus : null });
     }
 
+    async function moveItemToBacklog(id) {
+        const item = items.value.find((entry) => entry.id === id);
+        if (!item || isBacklogPriority(item.priority)) return false;
+
+        const backlogPriority = isMatrixPriority(item.priority) ? item.priority : item.backlogPriority || 'media';
+
+        return updateItem(id, {
+            priority: BACKLOG_PRIORITY_ID,
+            backlogPriority,
+            devStatus: null
+        });
+    }
+
+    async function promoteFromBacklog(id, productId, priority) {
+        if (isBacklogPriority(priority)) return false;
+
+        return updateItem(id, { productId, priority, backlogPriority: null });
+    }
+
+    async function moveBacklogItemToPriority(id, backlogPriority) {
+        const item = items.value.find((entry) => entry.id === id);
+        if (!item || !isBacklogPriority(item.priority)) return false;
+        if (getBacklogTier(item) === backlogPriority) return false;
+
+        return updateItem(id, { backlogPriority });
+    }
+
+    function countBacklogByPriority(tier) {
+        return backlogItems.value.filter((item) => getBacklogTier(item) === tier).length;
+    }
+
+    async function finalizeConcludedItems() {
+        const concluded = items.value.filter((item) => item.devStatus === 'concluido' && !isDelivered(item));
+        if (!concluded.length) {
+            return { count: 0, items: [] };
+        }
+
+        if (isRoadmapApiEnabled()) {
+            const result = await api.finalizeDeliveries();
+            const deliveredMap = new Map((result?.items ?? []).map((item) => [item.id, item]));
+
+            items.value = items.value.map((item) => {
+                const delivered = deliveredMap.get(item.id);
+                if (delivered) {
+                    return normalizeItem({ ...item, ...delivered, devStatus: null });
+                }
+                return item;
+            });
+
+            persist();
+            return result ?? { count: deliveredMap.size, items: [...deliveredMap.values()] };
+        }
+
+        const deliveredAt = new Date().toISOString();
+        items.value = items.value.map((item) => {
+            if (item.devStatus === 'concluido') {
+                return normalizeItem({ ...item, devStatus: null, deliveredAt });
+            }
+            return item;
+        });
+        persist();
+
+        return {
+            count: concluded.length,
+            deliveredAt,
+            items: items.value.filter((item) => item.deliveredAt === deliveredAt)
+        };
+    }
+
     function countByProduct(productId) {
+        return items.value.filter(
+            (item) => item.productId === productId && !isBacklogPriority(item.priority) && !isDelivered(item)
+        ).length;
+    }
+
+    function countAllByProduct(productId) {
         return items.value.filter((item) => item.productId === productId).length;
     }
 
+    function countBacklogByProduct(productId) {
+        return items.value.filter((item) => item.productId === productId && isBacklogPriority(item.priority)).length;
+    }
+
     function countByPriority(priority) {
-        return items.value.filter((item) => item.priority === priority).length;
+        return items.value.filter(
+            (item) => item.priority === priority && !isBacklogPriority(item.priority) && !isDelivered(item)
+        ).length;
     }
 
     function countDevByProduct(productId) {
@@ -231,10 +381,15 @@ function createMatrixStore(roadmapTypeInput) {
     return {
         items,
         isHydrated,
+        backlogItems,
+        matrixItems,
         devItems,
+        deliveredItems,
         devStats,
         getCellItems,
         getDevItemsByStatus,
+        getBacklogItemsByPriority,
+        moveBacklogItemToPriority,
         addItem,
         removeItem,
         removeItemsByProduct,
@@ -242,9 +397,15 @@ function createMatrixStore(roadmapTypeInput) {
         saveItemFields,
         moveItemToPriority,
         moveItemToCell,
+        moveItemToBacklog,
+        promoteFromBacklog,
         moveItemToDevStatus,
         setItemInDevelopment,
+        finalizeConcludedItems,
         countByProduct,
+        countAllByProduct,
+        countBacklogByProduct,
+        countBacklogByPriority,
         countByPriority,
         countDevByProduct
     };

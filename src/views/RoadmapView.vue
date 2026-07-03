@@ -3,22 +3,19 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import RoadmapPageHeader from '@/components/RoadmapPageHeader.vue';
+import RoadmapItemFormDialog from '@/components/RoadmapItemFormDialog.vue';
 import { ROADMAP_PRIORITIES } from '@/data/roadmapProducts';
-import { ROADMAP_DEV_STATUSES } from '@/data/roadmapDevStatus';
 import { useRoadmapMatrix } from '@/composables/useRoadmapMatrix';
 import {
     MODULE_ACCENT_OPTIONS,
     MODULE_ICON_OPTIONS,
     useRoadmapProducts
 } from '@/composables/useRoadmapProducts';
-import {
-    ROADMAP_METRICS_GROUPED,
-    getMetricLabels
-} from '@/data/roadmapMetrics';
+import { useRoadmapMetrics } from '@/composables/useRoadmapMetrics';
 import '@/assets/home.css';
 import { getRoadmapReady, getRoadmapSyncError } from '@/composables/roadmapLoader';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
-import { getRoadmapTypeMeta, parseRoadmapType, roadmapDevPath } from '@/config/roadmapTypes';
+import { getRoadmapTypeMeta, parseRoadmapType, roadmapBacklogPath, roadmapDevPath } from '@/config/roadmapTypes';
 
 const props = defineProps({
     type: {
@@ -33,9 +30,11 @@ const typeMeta = computed(() => getRoadmapTypeMeta(roadmapType.value));
 const roadmapReady = computed(() => getRoadmapReady(roadmapType.value).value);
 const roadmapSyncError = computed(() => getRoadmapSyncError(roadmapType.value).value);
 const devBoardPath = computed(() => roadmapDevPath(roadmapType.value));
+const backlogPath = computed(() => roadmapBacklogPath(roadmapType.value));
 
-const { getCellItems, addItem, removeItem, removeItemsByProduct, updateItem, saveItemFields, moveItemToCell, items, countByProduct, countByPriority } = useRoadmapMatrix(roadmapType);
+const { getCellItems, addItem, removeItem, removeItemsByProduct, updateItem, saveItemFields, moveItemToCell, moveItemToBacklog, matrixItems, backlogItems, countByProduct, countAllByProduct, countByPriority } = useRoadmapMatrix(roadmapType);
 const { allProducts, getProductById, addProduct, removeModule, upsertProduct } = useRoadmapProducts(roadmapType);
+const { metricsGrouped, getMetricLabels } = useRoadmapMetrics();
 
 const dialogVisible = ref(false);
 const dialogMode = ref('add');
@@ -100,7 +99,7 @@ const { draggingId: draggingFeatureId, dropTargetKey: dragOverCellKey, suppressC
     }
 });
 
-const totalFeatures = computed(() => items.value.length);
+const totalFeatures = computed(() => matrixItems.value.length);
 
 function openAddDialog(product, priority) {
     dialogMode.value = 'add';
@@ -202,6 +201,14 @@ async function confirmSave() {
     }
 
     dialogSaved.value = true;
+    dialogVisible.value = false;
+}
+
+async function sendToBacklog() {
+    if (!editingId.value) return;
+
+    dialogSaved.value = true;
+    await moveItemToBacklog(editingId.value);
     dialogVisible.value = false;
 }
 
@@ -322,11 +329,14 @@ async function confirmSaveModule() {
             <RoadmapPageHeader
                 view="matrix"
                 title="Matriz de itens"
-                :lead="typeMeta.tagline"
+                :subtitle="typeMeta.tagline"
             >
                 <template #actions>
                     <div class="roadmap-stats roadmap-stats--inline">
-                        <span class="roadmap-stat"><b>{{ totalFeatures }}</b> itens</span>
+                        <span class="roadmap-stat"><b>{{ totalFeatures }}</b> na matriz</span>
+                        <router-link :to="backlogPath" class="roadmap-stat roadmap-stat--link">
+                            <b>{{ backlogItems.length }}</b> no backlog
+                        </router-link>
                         <span class="roadmap-stat"><b>{{ allProducts.length }}</b> módulos</span>
                         <span class="roadmap-stat"><b>{{ ROADMAP_PRIORITIES.length }}</b> níveis</span>
                     </div>
@@ -552,162 +562,26 @@ async function confirmSaveModule() {
             </template>
         </Dialog>
 
-        <Dialog
+        <RoadmapItemFormDialog
             v-model:visible="dialogVisible"
-            modal
-            append-to="body"
-            class="roadmap-form-dialog roadmap-item-dialog"
-            :header="dialogMode === 'edit' ? 'Editar item' : 'Novo item'"
-            :style="{ width: 'min(760px, 96vw)' }"
-            :draggable="false"
-        >
-            <div class="roadmap-dialog-field">
-                <label for="feature-product">Módulo</label>
-                <Select
-                    id="feature-product"
-                    v-model="dialogProductId"
-                    :options="allProducts"
-                    option-label="title"
-                    option-value="id"
-                    class="w-full roadmap-product-select"
-                >
-                    <template #value="{ value }">
-                        <span v-if="value" class="roadmap-product-select__value">
-                            <span
-                                class="roadmap-col-header__icon roadmap-product-select__icon"
-                                :style="{ background: getProductById(value)?.accent }"
-                            >
-                                <i :class="getProductById(value)?.icon" />
-                            </span>
-                            {{ getProductById(value)?.title }}
-                        </span>
-                    </template>
-                    <template #option="{ option }">
-                        <span class="roadmap-module-option">
-                            <span class="roadmap-col-header__icon" :style="{ background: option.accent }">
-                                <i :class="option.icon" />
-                            </span>
-                            {{ option.title }}
-                        </span>
-                    </template>
-                </Select>
-                <small v-if="dialogMode === 'edit'" class="roadmap-dialog-hint">
-                    Ao mudar o módulo, o item move para a linha correspondente na matriz.
-                </small>
-            </div>
-            <div class="roadmap-dialog-field">
-                <label for="feature-title">Item</label>
-                <InputText
-                    id="feature-title"
-                    v-model="dialogTitle"
-                    class="w-full"
-                    placeholder="Ex.: Importação XML TISS em lote"
-                    @keyup.enter="confirmSave"
-                />
-            </div>
-            <div class="roadmap-dialog-field">
-                <label for="feature-notes">Observações (opcional)</label>
-                <Textarea
-                    id="feature-notes"
-                    v-model="dialogNotes"
-                    class="w-full"
-                    rows="4"
-                    placeholder="Contexto, dependência ou critério de aceite..."
-                />
-            </div>
-            <div class="roadmap-dialog-field">
-                <label for="feature-metrics">Métricas (opcional)</label>
-                <MultiSelect
-                    id="feature-metrics"
-                    v-model="dialogMetrics"
-                    :options="ROADMAP_METRICS_GROUPED"
-                    option-label="label"
-                    option-value="id"
-                    option-group-label="label"
-                    option-group-children="items"
-                    filter
-                    display="chip"
-                    append-to="body"
-                    scroll-height="22rem"
-                    panel-class="roadmap-metrics-panel"
-                    :panel-style="{ minWidth: 'min(720px, 92vw)' }"
-                    class="w-full roadmap-metrics-select"
-                    placeholder="Selecione métricas de sucesso"
-                />
-                <small class="roadmap-dialog-hint">
-                    Métricas de produto e negócio — adoção, conciliação, glosas, antecipação e retenção.
-                </small>
-            </div>
-            <div class="roadmap-dialog-row">
-                <div class="roadmap-dialog-field">
-                    <label for="feature-priority">Prioridade</label>
-                    <Select
-                        id="feature-priority"
-                        v-model="dialogPriority"
-                        :options="ROADMAP_PRIORITIES"
-                        option-label="label"
-                        option-value="id"
-                        class="w-full"
-                    >
-                        <template #value="{ value }">
-                            <span
-                                v-if="value"
-                                class="roadmap-priority-pill"
-                                :class="ROADMAP_PRIORITIES.find((p) => p.id === value)?.rowClass"
-                            >
-                                {{ ROADMAP_PRIORITIES.find((p) => p.id === value)?.label }}
-                            </span>
-                        </template>
-                        <template #option="{ option }">
-                            <span class="roadmap-priority-pill" :class="option.rowClass">{{ option.label }}</span>
-                        </template>
-                    </Select>
-                    <small v-if="dialogMode === 'edit'" class="roadmap-dialog-hint">
-                        Ao mudar a prioridade, o item move automaticamente para a coluna correspondente.
-                    </small>
-                </div>
-                <div class="roadmap-dialog-field">
-                    <label>Desenvolvimento</label>
-                    <div class="roadmap-dialog-check">
-                        <Checkbox v-model="dialogInDevelopment" binary input-id="feature-in-dev" />
-                        <label for="feature-in-dev">Enviar para o board de desenvolvimento</label>
-                    </div>
-                    <Select
-                        v-if="dialogInDevelopment"
-                        v-model="dialogDevStatus"
-                        :options="ROADMAP_DEV_STATUSES"
-                        option-label="label"
-                        option-value="id"
-                        class="w-full"
-                    >
-                        <template #value="{ value }">
-                            <span
-                                v-if="value"
-                                class="roadmap-dev-pill"
-                                :class="ROADMAP_DEV_STATUSES.find((s) => s.id === value)?.rowClass"
-                            >
-                                {{ ROADMAP_DEV_STATUSES.find((s) => s.id === value)?.label }}
-                            </span>
-                        </template>
-                        <template #option="{ option }">
-                            <span class="roadmap-dev-pill" :class="option.rowClass">{{ option.label }}</span>
-                        </template>
-                    </Select>
-                    <small v-if="dialogInDevelopment" class="roadmap-dialog-hint">
-                        Visível na aba <router-link :to="devBoardPath">Desenvolvimento</router-link> para acompanhamento do CEO.
-                    </small>
-                </div>
-            </div>
-            <template #footer>
-                <Button label="Cancelar" severity="secondary" text @click="closeItemDialog" />
-                <Button
-                    :label="dialogMode === 'edit' ? 'Salvar' : 'Adicionar'"
-                    :icon="dialogMode === 'edit' ? 'pi pi-check' : 'pi pi-plus'"
-                    :disabled="!dialogTitle.trim()"
-                    @click="confirmSave"
-                />
-            </template>
-        </Dialog>
+            v-model:product-id="dialogProductId"
+            v-model:title="dialogTitle"
+            v-model:notes="dialogNotes"
+            v-model:priority="dialogPriority"
+            v-model:metrics="dialogMetrics"
+            v-model:in-development="dialogInDevelopment"
+            v-model:dev-status="dialogDevStatus"
+            :mode="dialogMode"
+            variant="matrix"
+            :all-products="allProducts"
+            :priority-options="ROADMAP_PRIORITIES"
+            :metrics-grouped="metricsGrouped"
+            :get-product-by-id="getProductById"
+            :dev-board-path="devBoardPath"
+            @save="confirmSave"
+            @cancel="closeItemDialog"
+            @send-to-backlog="sendToBacklog"
+        />
 
         <Dialog
             v-model:visible="deleteConfirmVisible"
@@ -738,9 +612,9 @@ async function confirmSaveModule() {
             <p class="roadmap-delete-confirm">
                 Tem certeza que deseja excluir o módulo
                 <strong>{{ pendingDeleteModule?.title }}</strong>?
-                <template v-if="pendingDeleteModule && countByProduct(pendingDeleteModule.id) > 0">
-                    Os <strong>{{ countByProduct(pendingDeleteModule.id) }}</strong>
-                    {{ countByProduct(pendingDeleteModule.id) === 1 ? 'item associado será removido' : 'itens associados serão removidos' }}.
+                <template v-if="pendingDeleteModule && countAllByProduct(pendingDeleteModule.id) > 0">
+                    Os <strong>{{ countAllByProduct(pendingDeleteModule.id) }}</strong>
+                    {{ countAllByProduct(pendingDeleteModule.id) === 1 ? 'item associado será removido' : 'itens associados serão removidos' }}.
                 </template>
                 Esta ação não pode ser desfeita.
             </p>

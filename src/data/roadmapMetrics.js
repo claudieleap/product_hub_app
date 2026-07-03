@@ -3,7 +3,7 @@
  * Agrupadas por área operacional, não por hipótese do board PMF.
  */
 
-export const ROADMAP_METRIC_GROUPS = [
+export const DEFAULT_ROADMAP_METRIC_GROUPS = [
     {
         id: 'adocao',
         label: 'Adoção & uso',
@@ -76,18 +76,29 @@ export const ROADMAP_METRIC_GROUPS = [
     }
 ];
 
-export const ROADMAP_METRICS = ROADMAP_METRIC_GROUPS.flatMap((group) =>
-    group.metrics.map((metric) => ({
-        ...metric,
-        groupId: group.id,
-        groupLabel: group.label
-    }))
-);
+/** @deprecated use DEFAULT_ROADMAP_METRIC_GROUPS */
+export const ROADMAP_METRIC_GROUPS = DEFAULT_ROADMAP_METRIC_GROUPS;
 
-export const ROADMAP_METRICS_GROUPED = ROADMAP_METRIC_GROUPS.map((group) => ({
-    label: group.label,
-    items: group.metrics.map(({ id, label }) => ({ id, label }))
-}));
+export function buildFlatMetrics(groups = DEFAULT_ROADMAP_METRIC_GROUPS) {
+    return groups.flatMap((group) =>
+        group.metrics.map((metric) => ({
+            ...metric,
+            groupId: group.id,
+            groupLabel: group.label
+        }))
+    );
+}
+
+export const ROADMAP_METRICS = buildFlatMetrics(DEFAULT_ROADMAP_METRIC_GROUPS);
+
+export function buildMetricsGrouped(groups = DEFAULT_ROADMAP_METRIC_GROUPS) {
+    return groups.map((group) => ({
+        label: group.label,
+        items: group.metrics.map(({ id, label }) => ({ id, label }))
+    }));
+}
+
+export const ROADMAP_METRICS_GROUPED = buildMetricsGrouped(DEFAULT_ROADMAP_METRIC_GROUPS);
 
 /** IDs antigos do board PMF (H1-0 …) → métrica atual do roadmap */
 const LEGACY_METRIC_ALIASES = {
@@ -116,17 +127,19 @@ function resolveMetricId(id) {
     return LEGACY_METRIC_ALIASES[id] ?? id;
 }
 
-export function getMetricById(id) {
+export { resolveMetricId };
+
+export function getMetricById(id, catalog = ROADMAP_METRICS) {
     const resolved = resolveMetricId(id);
-    return ROADMAP_METRICS.find((metric) => metric.id === resolved) ?? null;
+    return catalog.find((metric) => metric.id === resolved) ?? null;
 }
 
-export function getMetricLabels(ids = []) {
+export function getMetricLabelsFromCatalog(ids = [], catalog = ROADMAP_METRICS) {
     const seen = new Set();
     const labels = [];
 
     for (const id of ids) {
-        const label = getMetricById(id)?.label;
+        const label = getMetricById(id, catalog)?.label;
         if (label && !seen.has(label)) {
             seen.add(label);
             labels.push(label);
@@ -134,4 +147,8 @@ export function getMetricLabels(ids = []) {
     }
 
     return labels;
+}
+
+export function getMetricLabels(ids = []) {
+    return getMetricLabelsFromCatalog(ids, ROADMAP_METRICS);
 }

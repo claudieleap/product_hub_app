@@ -1,9 +1,28 @@
-export const ROADMAP_PRIORITIES = [
+export const BACKLOG_PRIORITY_ID = 'backlog';
+
+export const MATRIX_PRIORITIES = [
     { id: 'alta', label: 'Alta', rowClass: 'priority-alta' },
     { id: 'media', label: 'Média', rowClass: 'priority-media' },
     { id: 'baixa', label: 'Baixa', rowClass: 'priority-baixa' },
     { id: 'perfumaria', label: 'Perfumaria', rowClass: 'priority-perfumaria' }
 ];
+
+/** Colunas da matriz (sem backlog). */
+export const ROADMAP_PRIORITIES = MATRIX_PRIORITIES;
+
+export const BACKLOG_PRIORITY = {
+    id: BACKLOG_PRIORITY_ID,
+    label: 'Backlog',
+    rowClass: 'priority-backlog'
+};
+
+export function isBacklogPriority(priority) {
+    return priority === BACKLOG_PRIORITY_ID;
+}
+
+export function isMatrixPriority(priority) {
+    return MATRIX_PRIORITIES.some((entry) => entry.id === priority);
+}
 
 export const ROADMAP_PRODUCTS = [
     {

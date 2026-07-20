@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import ProductHubLogo from '@/components/ProductHubLogo.vue';
 import '@/assets/auth.css';
 
 const router = useRouter();
@@ -32,8 +33,9 @@ async function onSubmit() {
 <template>
     <div class="auth-shell">
         <div class="auth-card">
-            <img src="/layout/images/logo.svg" alt="Aleevia" class="auth-logo" />
-            <h1 class="auth-title">Product Hub</h1>
+            <div class="auth-logo">
+                <ProductHubLogo :size="46" />
+            </div>
             <p class="auth-subtitle">Acesse com seu usuário do time</p>
 
             <form class="auth-form" @submit.prevent="onSubmit">

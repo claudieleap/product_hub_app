@@ -6,6 +6,7 @@ import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTyp
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
 import { useAuth } from '@/composables/useAuth';
 import RoadmapTypeIcon from '@/components/RoadmapTypeIcon.vue';
+import ProductHubLogo from '@/components/ProductHubLogo.vue';
 
 const props = defineProps({
     /** Home não exibe links de contexto na sidebar */
@@ -126,7 +127,7 @@ onUnmounted(() => {
             </button>
 
             <router-link :to="{ name: 'home' }" class="vp-mobile-bar__logo" @click="closeMobileMenu">
-                <img src="/layout/images/logo.svg" alt="Aleevia" />
+                <ProductHubLogo :size="26" />
             </router-link>
 
             <button type="button" class="vp-mobile-bar__appearance" title="Alternar tema" @click="toggleAppearance">
@@ -137,7 +138,7 @@ onUnmounted(() => {
         <aside class="vp-aside" :class="{ 'vp-aside--collapsed': asideCollapsed }" aria-label="Navegação principal">
             <div class="vp-aside__brand">
                 <router-link :to="{ name: 'home' }" class="vp-aside__logo" @click="closeMobileMenu">
-                    <img src="/layout/images/logo.svg" alt="Aleevia" />
+                    <ProductHubLogo :variant="asideCollapsed ? 'mark' : 'full'" :size="26" />
                 </router-link>
                 <button
                     type="button"

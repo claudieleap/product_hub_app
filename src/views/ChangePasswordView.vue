@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authApi } from '@/api/authClient';
 import { useAuth } from '@/composables/useAuth';
+import ProductHubLogo from '@/components/ProductHubLogo.vue';
 import '@/assets/auth.css';
 
 const router = useRouter();
@@ -44,7 +45,9 @@ async function onLogout() {
 <template>
     <div class="auth-shell">
         <div class="auth-card">
-            <img src="/layout/images/logo.svg" alt="Aleevia" class="auth-logo" />
+            <div class="auth-logo">
+                <ProductHubLogo :size="40" />
+            </div>
             <h1 class="auth-title">Defina sua senha</h1>
             <p class="auth-subtitle">Olá, {{ user?.name }} — crie uma senha só sua para continuar</p>
 

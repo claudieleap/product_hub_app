@@ -1,9 +1,10 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { isNavActive, nav, resolveSidebar } from '@/config/site';
 import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
+import { useAuth } from '@/composables/useAuth';
 import RoadmapTypeIcon from '@/components/RoadmapTypeIcon.vue';
 
 const props = defineProps({
@@ -14,11 +15,20 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const router = useRouter();
 const isDark = ref(false);
 const asideCollapsed = ref(false);
 const mobileMenuOpen = ref(false);
 
 const ASIDE_STORAGE_KEY = 'vp-aside-collapsed';
+
+const { user, isAdmin, logout } = useAuth();
+const visibleNav = computed(() => nav.filter((item) => !item.adminOnly || isAdmin.value));
+
+async function onLogout() {
+    await logout();
+    router.push('/login');
+}
 
 const roadmapType = computed(() => parseRoadmapTypeFromPath(route.path));
 const { allProducts } = useRoadmapProducts(roadmapType);
@@ -142,7 +152,7 @@ onUnmounted(() => {
 
             <nav class="vp-aside__nav" aria-label="Seções">
                 <router-link
-                    v-for="item in nav"
+                    v-for="item in visibleNav"
                     :key="item.text"
                     :to="item.link"
                     class="vp-aside__nav-link"
@@ -186,6 +196,25 @@ onUnmounted(() => {
                         {{ isDark ? 'Modo claro' : 'Modo escuro' }}
                     </span>
                 </button>
+
+                <div v-if="user" class="vp-aside__user" :class="{ 'vp-aside__user--collapsed': asideCollapsed }">
+                    <span class="vp-aside__user-avatar" :title="user.name">
+                        {{ (user.name || user.username || '?').charAt(0).toUpperCase() }}
+                    </span>
+                    <span v-if="!asideCollapsed" class="vp-aside__user-info">
+                        <span class="vp-aside__user-name">{{ user.name }}</span>
+                        <span class="vp-aside__user-role">{{ isAdmin ? 'Admin' : 'Usuário' }}</span>
+                    </span>
+                    <button
+                        type="button"
+                        class="vp-aside__logout"
+                        title="Sair"
+                        aria-label="Sair"
+                        @click="onLogout"
+                    >
+                        <i class="pi pi-sign-out" />
+                    </button>
+                </div>
             </div>
         </aside>
 
@@ -206,3 +235,75 @@ onUnmounted(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.vp-aside__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(120, 130, 150, 0.18);
+}
+
+.vp-aside__user--collapsed {
+    justify-content: center;
+}
+
+.vp-aside__user-avatar {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1e4fe0;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.vp-aside__user-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.vp-aside__user-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vp-aside__user-role {
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+.vp-aside__logout {
+    flex: none;
+    border: none;
+    background: transparent;
+    color: inherit;
+    opacity: 0.65;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vp-aside__logout:hover {
+    opacity: 1;
+    background: rgba(207, 74, 62, 0.12);
+    color: #cf4a3e;
+}
+</style>

@@ -7,7 +7,11 @@ import RoadmapBacklogView from '@/views/RoadmapBacklogView.vue';
 import RoadmapEntregasView from '@/views/RoadmapEntregasView.vue';
 import MetricsConfigView from '@/views/MetricsConfigView.vue';
 import OnboardingView from '@/views/OnboardingView.vue';
+import LoginView from '@/views/LoginView.vue';
+import ChangePasswordView from '@/views/ChangePasswordView.vue';
+import ContasView from '@/views/ContasView.vue';
 import { getRoadmapTypeMeta, isRoadmapType } from '@/config/roadmapTypes';
+import { useAuth } from '@/composables/useAuth';
 
 const router = createRouter({
     history: createWebHistory(),
@@ -80,6 +84,24 @@ const router = createRouter({
             name: 'status',
             component: StatusView,
             meta: { title: 'Status da API' }
+        },
+        {
+            path: '/login',
+            name: 'login',
+            component: LoginView,
+            meta: { title: 'Entrar', public: true }
+        },
+        {
+            path: '/trocar-senha',
+            name: 'trocar-senha',
+            component: ChangePasswordView,
+            meta: { title: 'Definir senha' }
+        },
+        {
+            path: '/configuracoes/contas',
+            name: 'contas',
+            component: ContasView,
+            meta: { title: 'Contas', admin: true }
         }
     ],
     scrollBehavior(to) {
@@ -87,6 +109,36 @@ const router = createRouter({
             return { el: to.hash, behavior: 'smooth', top: 80 };
         }
         return { top: 0 };
+    }
+});
+
+router.beforeEach((to) => {
+    const { isAuthenticated, isAdmin, mustChangePassword } = useAuth();
+
+    if (to.meta.public) {
+        if (isAuthenticated.value && to.name === 'login') {
+            return { path: '/' };
+        }
+        return true;
+    }
+
+    if (!isAuthenticated.value) {
+        return {
+            name: 'login',
+            query: to.fullPath && to.fullPath !== '/' ? { redirect: to.fullPath } : {}
+        };
+    }
+
+    if (mustChangePassword.value && to.name !== 'trocar-senha') {
+        return { name: 'trocar-senha' };
+    }
+
+    if (!mustChangePassword.value && to.name === 'trocar-senha') {
+        return { path: '/' };
+    }
+
+    if (to.meta.admin && !isAdmin.value) {
+        return { path: '/' };
     }
 });
 

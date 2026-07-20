@@ -32,6 +32,13 @@ export const nav = [
         link: '/configuracoes/metricas',
         match: /^\/configuracoes\/metricas$/,
         icon: 'pi pi-chart-bar'
+    },
+    {
+        text: 'Contas',
+        link: '/configuracoes/contas',
+        match: /^\/configuracoes\/contas$/,
+        icon: 'pi pi-users',
+        adminOnly: true
     }
 ];
 

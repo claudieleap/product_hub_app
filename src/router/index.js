@@ -6,6 +6,7 @@ import RoadmapDevView from '@/views/RoadmapDevView.vue';
 import RoadmapBacklogView from '@/views/RoadmapBacklogView.vue';
 import RoadmapEntregasView from '@/views/RoadmapEntregasView.vue';
 import MetricsConfigView from '@/views/MetricsConfigView.vue';
+import OnboardingView from '@/views/OnboardingView.vue';
 import { getRoadmapTypeMeta, isRoadmapType } from '@/config/roadmapTypes';
 
 const router = createRouter({
@@ -57,6 +58,12 @@ const router = createRouter({
             name: 'entregas',
             component: RoadmapEntregasView,
             meta: { title: 'Entregas' }
+        },
+        {
+            path: '/onboarding',
+            name: 'onboarding',
+            component: OnboardingView,
+            meta: { title: 'Onboarding de clínicas' }
         },
         {
             path: '/configuracoes/metricas',

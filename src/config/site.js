@@ -1,5 +1,6 @@
 import { ROADMAP_TYPES } from '@/config/roadmapTypes';
 import { ENTREGAS_PATH, roadmapDevPath, roadmapMatrixPath } from '@/config/roadmapTypes';
+import { ONBOARDING_PATH } from '@/config/onboardingConfig';
 
 export const siteTitle = 'Product Hub';
 export const siteDescription = 'Roadmaps SaaS, Interno e BPO — estratégia Aleevia';
@@ -20,6 +21,12 @@ export const nav = [
         match: new RegExp(`^/roadmap/${type.id}`),
         icon: type.icon
     })),
+    {
+        text: 'Onboarding',
+        link: ONBOARDING_PATH,
+        match: /^\/onboarding/,
+        icon: 'pi pi-building-columns'
+    },
     {
         text: 'Métricas',
         link: '/configuracoes/metricas',

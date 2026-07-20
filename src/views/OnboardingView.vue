@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import OnboardingCardDialog from '@/components/OnboardingCardDialog.vue';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
-import { getKindMeta } from '@/config/onboardingConfig';
+import { getKindMeta, getProjectMeta } from '@/config/onboardingConfig';
 import '@/assets/onboarding.css';
 
 const {
@@ -87,6 +87,10 @@ function handleRemoveCard(card) {
 
 function kindMeta(kind) {
     return getKindMeta(kind);
+}
+
+function projectMeta(projectId) {
+    return getProjectMeta(projectId);
 }
 
 function progressOf(card) {
@@ -222,6 +226,18 @@ function progressOf(card) {
                                 </div>
 
                                 <h3 class="onb-card__name">{{ card.name }}</h3>
+
+                                <div v-if="card.projects?.length" class="onb-card__tags">
+                                    <span
+                                        v-for="projectId in card.projects"
+                                        :key="projectId"
+                                        class="onb-tag"
+                                        :class="`onb-tag--${projectMeta(projectId).tone}`"
+                                    >
+                                        <i :class="projectMeta(projectId).icon" />
+                                        {{ projectMeta(projectId).label }}
+                                    </span>
+                                </div>
 
                                 <div class="onb-card__meta">
                                     <span><b>{{ card.units.length }}</b> unidades</span>

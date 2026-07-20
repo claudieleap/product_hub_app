@@ -7,7 +7,7 @@
  * três operações (Faturamento, DP, DC) com status semáforo + descrição.
  */
 
-export const ONBOARDING_STORAGE_KEY = 'product-hub-onboarding-v1';
+export const ONBOARDING_STORAGE_KEY = 'product-hub-onboarding-v2';
 export const ONBOARDING_PATH = '/onboarding';
 
 export function onboardingPath() {
@@ -19,6 +19,16 @@ export const ONBOARDING_KINDS = [
     { id: 'clinica', label: 'Clínica', icon: 'pi pi-heart' },
     { id: 'hospital', label: 'Hospital', icon: 'pi pi-building' }
 ];
+
+/** Projeto ao qual a clínica pertence — pode ser SaaS, BPO ou os dois. */
+export const ONBOARDING_PROJECTS = [
+    { id: 'saas', label: 'SaaS', tone: 'moat', icon: 'pi pi-cloud' },
+    { id: 'bpo', label: 'BPO', tone: 'teal', icon: 'pi pi-briefcase' }
+];
+
+export function getProjectMeta(id) {
+    return ONBOARDING_PROJECTS.find((project) => project.id === id) ?? ONBOARDING_PROJECTS[0];
+}
 
 /** Fases padrão do board — o usuário pode renomear, reordenar e criar novas. */
 export const DEFAULT_ONBOARDING_PHASES = [

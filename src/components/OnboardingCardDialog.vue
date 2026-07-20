@@ -1,12 +1,9 @@
 <script setup>
 import { computed, ref } from 'vue';
-import {
-    ONBOARDING_KINDS,
-    ONBOARDING_OPERATIONS,
-    getStatusMeta
-} from '@/config/onboardingConfig';
+import { ONBOARDING_KINDS, ONBOARDING_PROJECTS } from '@/config/onboardingConfig';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import OnboardingCellDialog from '@/components/OnboardingCellDialog.vue';
+import OnboardingCellTile from '@/components/OnboardingCellTile.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -20,6 +17,7 @@ const {
     getCard,
     updateCard,
     removeCard,
+    toggleCardProject,
     addUnit,
     removeUnit,
     addConvenio,
@@ -29,8 +27,8 @@ const {
 } = useOnboardingBoard();
 
 const card = computed(() => getCard(props.cardId));
-const operations = ONBOARDING_OPERATIONS;
 const kinds = ONBOARDING_KINDS;
+const projects = ONBOARDING_PROJECTS;
 
 const cellDialogVisible = ref(false);
 const activeConvenio = ref(null);
@@ -47,12 +45,16 @@ const gridStyle = computed(() => {
 
 const progress = computed(() => (card.value ? cardProgress(card.value) : { pct: 0, done: 0, total: 0 }));
 
-function statusTone(statusId) {
-    return getStatusMeta(statusId).tone;
-}
-
 function setKind(kindId) {
     if (card.value) updateCard(card.value.id, { kind: kindId });
+}
+
+function isProjectOn(projectId) {
+    return card.value?.projects?.includes(projectId) ?? false;
+}
+
+function toggleProject(projectId) {
+    if (card.value) toggleCardProject(card.value.id, projectId);
 }
 
 function openCell(convenio, unit) {
@@ -104,6 +106,22 @@ function confirmDelete() {
                             >
                                 <i :class="kind.icon" />
                                 {{ kind.label }}
+                            </button>
+                        </div>
+                    </div>
+                    <div class="onb-field" style="flex: 0 0 auto">
+                        <label>Projeto <span style="font-weight: 400; color: var(--hub-muted)">(SaaS, BPO ou os dois)</span></label>
+                        <div class="onb-proj-toggle">
+                            <button
+                                v-for="project in projects"
+                                :key="project.id"
+                                type="button"
+                                class="onb-tag onb-tag--toggle"
+                                :class="[`onb-tag--${project.tone}`, { 'onb-tag--off': !isProjectOn(project.id) }]"
+                                @click="toggleProject(project.id)"
+                            >
+                                <i :class="isProjectOn(project.id) ? 'pi pi-check' : project.icon" />
+                                {{ project.label }}
                             </button>
                         </div>
                     </div>
@@ -179,43 +197,10 @@ function confirmDelete() {
                                 :key="`${convenio.id}-${unit.id}`"
                                 class="onb-matrix__cell"
                             >
-                                <button
-                                    type="button"
-                                    class="onb-cell"
-                                    :class="{ 'onb-cell--inativo': !readCell(card, convenio.id, unit.id).ativo }"
+                                <OnboardingCellTile
+                                    :cell="readCell(card, convenio.id, unit.id)"
                                     @click="openCell(convenio, unit)"
-                                >
-                                    <div class="onb-cell__row">
-                                        <span class="onb-cell__ativo">
-                                            <span
-                                                class="onb-status-dot"
-                                                :class="readCell(card, convenio.id, unit.id).ativo ? 'onb-tone-green' : ''"
-                                                :style="readCell(card, convenio.id, unit.id).ativo ? '' : 'background: var(--hub-line)'"
-                                            />
-                                            {{ readCell(card, convenio.id, unit.id).ativo ? 'Ativo' : 'Inativo' }}
-                                        </span>
-                                        <span
-                                            class="onb-cell__mode"
-                                            :class="{ 'onb-cell__mode--portal': readCell(card, convenio.id, unit.id).modo === 'portal' }"
-                                        >
-                                            {{ readCell(card, convenio.id, unit.id).modo === 'portal' ? 'Portal' : 'Fora' }}
-                                        </span>
-                                    </div>
-                                    <div class="onb-cell__ops">
-                                        <span
-                                            v-for="op in operations"
-                                            :key="op.id"
-                                            class="onb-op-chip"
-                                            :title="`${op.label}: ${getStatusMeta(readCell(card, convenio.id, unit.id).ops[op.id].status).label}`"
-                                        >
-                                            <span
-                                                class="onb-status-dot"
-                                                :class="`onb-tone-${statusTone(readCell(card, convenio.id, unit.id).ops[op.id].status)}`"
-                                            />
-                                            {{ op.short }}
-                                        </span>
-                                    </div>
-                                </button>
+                                />
                             </div>
                         </template>
                     </div>

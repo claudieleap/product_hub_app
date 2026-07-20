@@ -50,6 +50,7 @@ function normalizeCard(card) {
         order: Number.isFinite(card.order) ? card.order : 0,
         name: card.name ?? 'Nova clínica',
         kind: card.kind ?? 'clinica',
+        projects: Array.isArray(card.projects) ? [...card.projects] : [],
         notes: card.notes ?? '',
         units: Array.isArray(card.units) ? card.units.map((u) => ({ ...u })) : [],
         convenios: Array.isArray(card.convenios) ? card.convenios.map((c) => ({ ...c })) : [],
@@ -172,7 +173,18 @@ function updateCard(cardId, patch = {}) {
     if (!card) return;
     if (patch.name !== undefined) card.name = patch.name;
     if (patch.kind !== undefined) card.kind = patch.kind;
+    if (patch.projects !== undefined) card.projects = [...patch.projects];
     if (patch.notes !== undefined) card.notes = patch.notes;
+}
+
+function toggleCardProject(cardId, projectId) {
+    const card = getCard(cardId);
+    if (!card) return;
+    if (card.projects.includes(projectId)) {
+        card.projects = card.projects.filter((id) => id !== projectId);
+    } else {
+        card.projects = [...card.projects, projectId];
+    }
 }
 
 function removeCard(cardId) {
@@ -301,6 +313,7 @@ export function useOnboardingBoard() {
         getCard,
         addCard,
         updateCard,
+        toggleCardProject,
         removeCard,
         moveCardToPhase,
         // unidades

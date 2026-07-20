@@ -702,6 +702,84 @@
     color: var(--hub-green);
 }
 
+/* ---------- Conciliação (100% feito → pronto → conciliado) ---------- */
+
+.onb-cell--pronto {
+    border-color: color-mix(in srgb, var(--hub-green) 45%, var(--hub-line));
+    background: color-mix(in srgb, var(--hub-green-wash) 65%, var(--hub-surface));
+}
+
+.onb-cell--conciliado {
+    border-color: var(--hub-green);
+    background: color-mix(in srgb, var(--hub-green) 12%, var(--hub-surface));
+}
+
+.onb-cell__ribbon {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.onb-cell__ribbon--pronto {
+    background: var(--hub-green-wash);
+    color: var(--hub-green);
+}
+
+.onb-cell__ribbon--conciliado {
+    background: var(--hub-green);
+    color: #ffffff;
+}
+
+.onb-concilia {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--hub-line);
+    margin-top: 4px;
+}
+
+.onb-concilia--pronto {
+    background: var(--hub-green-wash);
+    border-color: color-mix(in srgb, var(--hub-green) 30%, transparent);
+}
+
+.onb-concilia--conciliado {
+    background: color-mix(in srgb, var(--hub-green) 12%, var(--hub-surface));
+    border-color: var(--hub-green);
+}
+
+.onb-concilia__info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.onb-concilia__info > i {
+    font-size: 22px;
+    color: var(--hub-green);
+}
+
+.onb-concilia__info strong {
+    display: block;
+    font-size: 14px;
+    color: var(--hub-ink);
+}
+
+.onb-concilia__info span {
+    font-size: 12px;
+    color: var(--hub-muted);
+}
+
 /* ---------- Semáforo (tons) ---------- */
 
 .onb-tone-red {

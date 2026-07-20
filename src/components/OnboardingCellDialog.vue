@@ -6,7 +6,7 @@ import {
     ONBOARDING_STATUSES,
     getStatusMeta
 } from '@/config/onboardingConfig';
-import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
+import { useOnboardingBoard, isCellAllDone } from '@/composables/useOnboardingBoard';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -41,6 +41,8 @@ const operations = ONBOARDING_OPERATIONS;
 const statuses = ONBOARDING_STATUSES;
 const modes = ONBOARDING_MODES;
 
+const allDone = computed(() => (cell.value ? isCellAllDone(cell.value) : false));
+
 function toneClass(statusId) {
     return `onb-tone-${getStatusMeta(statusId).tone}`;
 }
@@ -50,7 +52,14 @@ function setMode(modeId) {
 }
 
 function setStatus(opId, statusId) {
-    if (cell.value) cell.value.ops[opId].status = statusId;
+    if (!cell.value) return;
+    cell.value.ops[opId].status = statusId;
+    // Deixou de estar 100% concluída → não segue conciliada.
+    if (!isCellAllDone(cell.value)) cell.value.conciliado = false;
+}
+
+function setConciliado(value) {
+    if (cell.value) cell.value.conciliado = value && isCellAllDone(cell.value);
 }
 </script>
 
@@ -166,6 +175,39 @@ function setStatus(opId, statusId) {
                         />
                     </div>
                 </div>
+            </div>
+
+            <!-- Conciliação (só quando FAT/DP/DC = feito) -->
+            <div
+                v-if="allDone"
+                class="onb-concilia"
+                :class="cell.conciliado ? 'onb-concilia--conciliado' : 'onb-concilia--pronto'"
+            >
+                <div class="onb-concilia__info">
+                    <i :class="cell.conciliado ? 'pi pi-check-circle' : 'pi pi-verified'" />
+                    <div>
+                        <strong>{{ cell.conciliado ? 'Conciliado' : 'Pronto pra conciliar' }}</strong>
+                        <span>{{ cell.conciliado
+                            ? 'Faturamento, DP e DC concluídos e conciliados.'
+                            : 'As 3 operações estão concluídas — pode conciliar.' }}</span>
+                    </div>
+                </div>
+                <Button
+                    v-if="!cell.conciliado"
+                    label="Marcar como conciliado"
+                    icon="pi pi-check"
+                    size="small"
+                    @click="setConciliado(true)"
+                />
+                <Button
+                    v-else
+                    label="Desfazer"
+                    icon="pi pi-undo"
+                    severity="secondary"
+                    text
+                    size="small"
+                    @click="setConciliado(false)"
+                />
             </div>
         </template>
 

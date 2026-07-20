@@ -39,8 +39,14 @@ function defaultCell() {
         portalLogin: '',
         portalSenha: '',
         detalhe: '',
+        conciliado: false,
         ops: defaultOps()
     };
+}
+
+/** Todas as 3 operações concluídas (feito)? Então está pronta pra conciliar. */
+export function isCellAllDone(cell) {
+    return ONBOARDING_OPERATIONS.every((op) => cell?.ops?.[op.id]?.status === 'feito');
 }
 
 function normalizeCard(card) {
@@ -277,6 +283,15 @@ function setOperation(cardId, convenioId, unitId, opId, patch = {}) {
     const cell = ensureCell(cardId, convenioId, unitId);
     if (!cell) return;
     cell.ops[opId] = { ...cell.ops[opId], ...patch };
+    // Se deixou de estar 100% concluída, não pode seguir marcada como conciliada.
+    if (!isCellAllDone(cell)) cell.conciliado = false;
+}
+
+function setConciliado(cardId, convenioId, unitId, value) {
+    const cell = ensureCell(cardId, convenioId, unitId);
+    if (!cell) return;
+    // Só concilia quando as 3 operações estão feitas.
+    cell.conciliado = value ? isCellAllDone(cell) : false;
 }
 
 /* ---------- resumo p/ o tile da matriz ---------- */
@@ -331,6 +346,7 @@ export function useOnboardingBoard() {
         ensureCell,
         updateCell,
         setOperation,
+        setConciliado,
         cardProgress
     };
 }

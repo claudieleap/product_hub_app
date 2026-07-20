@@ -246,6 +246,52 @@
     border-color: var(--hub-line);
 }
 
+/* ---------- Responsável (avatar + nome) ---------- */
+
+.onb-card__owner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--hub-line);
+}
+
+.onb-card__owner-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hub-ink-soft);
+}
+
+.onb-card__owner-empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--hub-muted);
+}
+
+.onb-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--hub-ink);
+}
+
+.onb-person--empty {
+    color: var(--hub-muted);
+    font-weight: 500;
+}
+
+.onb-person-group {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hub-muted);
+}
+
 .onb-card__meta {
     display: flex;
     flex-wrap: wrap;

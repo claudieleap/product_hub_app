@@ -1,9 +1,14 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { ONBOARDING_KINDS, ONBOARDING_PROJECTS } from '@/config/onboardingConfig';
+import {
+    ONBOARDING_KINDS,
+    ONBOARDING_PROJECTS,
+    ONBOARDING_PEOPLE
+} from '@/config/onboardingConfig';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import OnboardingCellDialog from '@/components/OnboardingCellDialog.vue';
 import OnboardingCellTile from '@/components/OnboardingCellTile.vue';
+import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -29,6 +34,19 @@ const {
 const card = computed(() => getCard(props.cardId));
 const kinds = ONBOARDING_KINDS;
 const projects = ONBOARDING_PROJECTS;
+
+const peopleGroups = ONBOARDING_PROJECTS.map((project) => ({
+    label: project.label,
+    items: ONBOARDING_PEOPLE.filter((person) => person.project === project.id)
+}));
+
+const responsavel = computed(() =>
+    ONBOARDING_PEOPLE.find((person) => person.id === card.value?.responsavelId) ?? null
+);
+
+function setResponsavel(personId) {
+    if (card.value) updateCard(card.value.id, { responsavelId: personId ?? null });
+}
 
 const cellDialogVisible = ref(false);
 const activeConvenio = ref(null);
@@ -125,6 +143,40 @@ function confirmDelete() {
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <div class="onb-field" style="margin-top: 4px; max-width: 340px">
+                    <label>Responsável</label>
+                    <Select
+                        :model-value="card.responsavelId"
+                        :options="peopleGroups"
+                        option-group-label="label"
+                        option-group-children="items"
+                        option-label="name"
+                        option-value="id"
+                        show-clear
+                        placeholder="Sem responsável"
+                        append-to="body"
+                        class="w-full onb-responsavel-select"
+                        @update:model-value="setResponsavel"
+                    >
+                        <template #value>
+                            <span v-if="responsavel" class="onb-person">
+                                <OnboardingAvatar :avatar="responsavel.avatar" :size="22" />
+                                {{ responsavel.name }}
+                            </span>
+                            <span v-else class="onb-person onb-person--empty">Sem responsável</span>
+                        </template>
+                        <template #option="slotProps">
+                            <span class="onb-person">
+                                <OnboardingAvatar :avatar="slotProps.option.avatar" :size="26" />
+                                {{ slotProps.option.name }}
+                            </span>
+                        </template>
+                        <template #optiongroup="slotProps">
+                            <span class="onb-person-group">{{ slotProps.option.label }}</span>
+                        </template>
+                    </Select>
                 </div>
             </div>
 

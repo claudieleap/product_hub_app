@@ -51,6 +51,7 @@ function normalizeCard(card) {
         name: card.name ?? 'Nova clínica',
         kind: card.kind ?? 'clinica',
         projects: Array.isArray(card.projects) ? [...card.projects] : [],
+        responsavelId: card.responsavelId ?? null,
         notes: card.notes ?? '',
         units: Array.isArray(card.units) ? card.units.map((u) => ({ ...u })) : [],
         convenios: Array.isArray(card.convenios) ? card.convenios.map((c) => ({ ...c })) : [],
@@ -174,6 +175,7 @@ function updateCard(cardId, patch = {}) {
     if (patch.name !== undefined) card.name = patch.name;
     if (patch.kind !== undefined) card.kind = patch.kind;
     if (patch.projects !== undefined) card.projects = [...patch.projects];
+    if (patch.responsavelId !== undefined) card.responsavelId = patch.responsavelId;
     if (patch.notes !== undefined) card.notes = patch.notes;
 }
 

@@ -7,7 +7,7 @@
  * três operações (Faturamento, DP, DC) com status semáforo + descrição.
  */
 
-export const ONBOARDING_STORAGE_KEY = 'product-hub-onboarding-v2';
+export const ONBOARDING_STORAGE_KEY = 'product-hub-onboarding-v3';
 export const ONBOARDING_PATH = '/onboarding';
 
 export function onboardingPath() {
@@ -28,6 +28,32 @@ export const ONBOARDING_PROJECTS = [
 
 export function getProjectMeta(id) {
     return ONBOARDING_PROJECTS.find((project) => project.id === id) ?? ONBOARDING_PROJECTS[0];
+}
+
+/**
+ * Time e responsáveis. Cada pessoa tem um avatar "carinha" desenhado por
+ * features (ver OnboardingAvatar.vue) — nada de imagem externa (CSP/offline).
+ * bg: fundo do avatar (tom do projeto). skin/hair: cores. flags de estilo.
+ */
+const SAAS_BG = '#ece7fb';
+const BPO_BG = '#d9f2ee';
+
+export const ONBOARDING_PEOPLE = [
+    // BPO
+    { id: 'mike', name: 'Mike', project: 'bpo', avatar: { bg: BPO_BG, skin: '#e0b088', hair: '#2b2b2b', hairStyle: 'short', chubby: true } },
+    { id: 'diego', name: 'Diego', project: 'bpo', avatar: { bg: BPO_BG, skin: '#d29b6e', hair: '#4a3222', hairStyle: 'short' } },
+    { id: 'carlinhos', name: 'Carlinhos', project: 'bpo', avatar: { bg: BPO_BG, skin: '#c68a5b', hair: '#2b2b2b', hairStyle: 'buzz' } },
+    { id: 'matheus', name: 'Matheus', project: 'bpo', avatar: { bg: BPO_BG, skin: '#f0c8a0', hair: '#6b4a2f', hairStyle: 'short' } },
+    // SaaS
+    { id: 'pedro', name: 'Pedro', project: 'saas', avatar: { bg: SAAS_BG, skin: '#f0c8a0', hair: '#4a3222', hairStyle: 'short', chubby: true, goatee: true } },
+    { id: 'clau', name: 'Clau', project: 'saas', avatar: { bg: SAAS_BG, skin: '#f0c8a0', hair: '#6b4a2f', hairStyle: 'long', glasses: true } },
+    { id: 'wendel', name: 'Wendel', project: 'saas', avatar: { bg: SAAS_BG, skin: '#d29b6e', hair: '#2b2b2b', hairStyle: 'short', goatee: true } },
+    { id: 'thiago', name: 'Thiago', project: 'saas', avatar: { bg: SAAS_BG, skin: '#c68a5b', hair: '#2b2b2b', hairStyle: 'short' } },
+    { id: 'regina', name: 'Regina', project: 'saas', avatar: { bg: SAAS_BG, skin: '#f0c8a0', hair: '#7a4a2a', hairStyle: 'long' } }
+];
+
+export function getPersonMeta(id) {
+    return ONBOARDING_PEOPLE.find((person) => person.id === id) ?? null;
 }
 
 /** Fases padrão do board — o usuário pode renomear, reordenar e criar novas. */

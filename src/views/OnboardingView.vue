@@ -5,7 +5,8 @@ import PageHeader from '@/components/PageHeader.vue';
 import OnboardingCardDialog from '@/components/OnboardingCardDialog.vue';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
-import { getKindMeta, getProjectMeta } from '@/config/onboardingConfig';
+import { getKindMeta, getProjectMeta, getPersonMeta } from '@/config/onboardingConfig';
+import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import '@/assets/onboarding.css';
 
 const {
@@ -91,6 +92,10 @@ function kindMeta(kind) {
 
 function projectMeta(projectId) {
     return getProjectMeta(projectId);
+}
+
+function responsavel(card) {
+    return getPersonMeta(card.responsavelId);
 }
 
 function progressOf(card) {
@@ -252,6 +257,16 @@ function progressOf(card) {
                                         />
                                     </span>
                                     <span class="onb-progress-label">{{ progressOf(card).pct }}%</span>
+                                </div>
+
+                                <div class="onb-card__owner">
+                                    <template v-if="responsavel(card)">
+                                        <OnboardingAvatar :avatar="responsavel(card).avatar" :size="24" />
+                                        <span class="onb-card__owner-name">{{ responsavel(card).name }}</span>
+                                    </template>
+                                    <span v-else class="onb-card__owner-empty">
+                                        <i class="pi pi-user-plus" /> Sem responsável
+                                    </span>
                                 </div>
                             </article>
 

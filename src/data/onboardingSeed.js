@@ -21,7 +21,7 @@ function cell(ativo, modo, ops) {
     };
 }
 
-function makeCard({ id, phaseId, order, name, kind, projects = ['bpo'], units = [], convenios = [], cells = {} }) {
+function makeCard({ id, phaseId, order, name, kind, projects = ['bpo'], responsavelId = null, units = [], convenios = [], cells = {} }) {
     return {
         id,
         phaseId,
@@ -29,6 +29,7 @@ function makeCard({ id, phaseId, order, name, kind, projects = ['bpo'], units = 
         name,
         kind,
         projects,
+        responsavelId,
         notes: '',
         units,
         convenios,
@@ -75,17 +76,17 @@ export function createOnboardingSeed() {
         phases: DEFAULT_ONBOARDING_PHASES.map((phase) => ({ ...phase })),
         cards: [
             // Backlog
-            makeCard({ id: 'onb-ortodoc', phaseId: 'backlog', order: 0, name: 'Ortodoc', kind: 'clinica', projects: ['saas'] }),
-            makeCard({ id: 'onb-cian', phaseId: 'backlog', order: 1, name: 'Cian', kind: 'clinica', projects: ['bpo'] }),
+            makeCard({ id: 'onb-ortodoc', phaseId: 'backlog', order: 0, name: 'Ortodoc', kind: 'clinica', projects: ['saas'], responsavelId: 'thiago' }),
+            makeCard({ id: 'onb-cian', phaseId: 'backlog', order: 1, name: 'Cian', kind: 'clinica', projects: ['bpo'], responsavelId: 'diego' }),
 
             // Onboarding
-            makeCard({ id: 'onb-pronto-baby', phaseId: 'onboarding', order: 0, name: 'Pronto Baby', kind: 'clinica', projects: ['bpo'] }),
-            makeCard({ id: 'onb-dimeg', phaseId: 'onboarding', order: 1, name: 'Dimeg', kind: 'clinica', projects: ['saas'] }),
-            makeCard({ id: 'onb-santa-casa-cruzeiro', phaseId: 'onboarding', order: 2, name: 'Santa Casa Cruzeiro', kind: 'hospital', projects: ['bpo'] }),
-            makeCard({ id: 'onb-santa-casa-ourinhos', phaseId: 'onboarding', order: 3, name: 'Santa Casa Ourinhos', kind: 'hospital', projects: ['bpo'] }),
-            makeCard({ id: 'onb-inep', phaseId: 'onboarding', order: 4, name: 'INEP', kind: 'clinica', projects: ['saas', 'bpo'] }),
-            makeCard({ id: 'onb-hoc', phaseId: 'onboarding', order: 5, name: 'HOC Oswaldo Cruz', kind: 'hospital', projects: ['bpo'] }),
-            makeCard({ id: 'onb-rm', phaseId: 'onboarding', order: 6, name: 'RM', kind: 'clinica', projects: ['saas'] }),
+            makeCard({ id: 'onb-pronto-baby', phaseId: 'onboarding', order: 0, name: 'Pronto Baby', kind: 'clinica', projects: ['bpo'], responsavelId: 'carlinhos' }),
+            makeCard({ id: 'onb-dimeg', phaseId: 'onboarding', order: 1, name: 'Dimeg', kind: 'clinica', projects: ['saas'], responsavelId: 'clau' }),
+            makeCard({ id: 'onb-santa-casa-cruzeiro', phaseId: 'onboarding', order: 2, name: 'Santa Casa Cruzeiro', kind: 'hospital', projects: ['bpo'], responsavelId: 'mike' }),
+            makeCard({ id: 'onb-santa-casa-ourinhos', phaseId: 'onboarding', order: 3, name: 'Santa Casa Ourinhos', kind: 'hospital', projects: ['bpo'], responsavelId: 'matheus' }),
+            makeCard({ id: 'onb-inep', phaseId: 'onboarding', order: 4, name: 'INEP', kind: 'clinica', projects: ['saas', 'bpo'], responsavelId: 'wendel' }),
+            makeCard({ id: 'onb-hoc', phaseId: 'onboarding', order: 5, name: 'HOC Oswaldo Cruz', kind: 'hospital', projects: ['bpo'], responsavelId: 'diego' }),
+            makeCard({ id: 'onb-rm', phaseId: 'onboarding', order: 6, name: 'RM', kind: 'clinica', projects: ['saas'], responsavelId: 'regina' }),
 
             // Go live
             makeCard({
@@ -95,6 +96,7 @@ export function createOnboardingSeed() {
                 name: 'Cotrel',
                 kind: 'clinica',
                 projects: ['saas', 'bpo'],
+                responsavelId: 'pedro',
                 units: cotrelUnits,
                 convenios: cotrelConvenios,
                 cells: cotrelCells

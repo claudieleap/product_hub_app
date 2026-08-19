@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { resolveApiBaseUrl } from '@/api/apiBaseUrl';
 
 const client = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+    baseURL: resolveApiBaseUrl(),
     headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json'
@@ -9,7 +10,7 @@ const client = axios.create({
 });
 
 export async function fetchHealth() {
-    const { data } = await client.get('/v1/health');
+    const { data } = await client.get('/health');
     return data;
 }
 

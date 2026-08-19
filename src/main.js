@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import router from './router';
+import { loadMetricsCatalog } from '@/composables/useRoadmapMetrics';
 
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
@@ -8,6 +9,8 @@ import PrimeVue from 'primevue/config';
 
 import '@/assets/tailwind.css';
 import '@/assets/app.css';
+import '@/assets/vuepress-theme.css';
+import '@/assets/home.css';
 
 const app = createApp(App);
 
@@ -39,4 +42,5 @@ app.use(PrimeVue, {
 });
 
 app.use(router);
+void loadMetricsCatalog();
 app.mount('#app');

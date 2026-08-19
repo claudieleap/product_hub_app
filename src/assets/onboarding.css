@@ -1,0 +1,945 @@
+/* ============================================================
+   Onboarding — board de implantação de clínicas/hospitais
+   Reaproveita os design tokens (--hub-*) do home.css.
+   ============================================================ */
+
+.onboarding-page {
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--hub-ink);
+}
+
+/* ---------- Board (kanban de fases) ---------- */
+
+.onb-board-wrap {
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+.onb-board {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: min-content;
+    padding: 4px 2px 8px;
+}
+
+.onb-column {
+    flex: 0 0 320px;
+    width: 320px;
+    background: var(--hub-bg);
+    border: 1px solid var(--hub-line);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 220px);
+}
+
+.onb-column--drop-target {
+    outline: 2px dashed var(--hub-blue);
+    outline-offset: -3px;
+    background: var(--hub-blue-wash);
+}
+
+.onb-column__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--hub-line);
+}
+
+.onb-column__title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--hub-ink);
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.onb-column__hint {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--hub-muted);
+    letter-spacing: 0.02em;
+}
+
+.onb-column__count {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hub-muted);
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-line);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.onb-column__menu-btn {
+    border: none;
+    background: transparent;
+    color: var(--hub-muted);
+    cursor: pointer;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+}
+
+.onb-column__menu-btn:hover {
+    background: var(--hub-line);
+    color: var(--hub-ink);
+}
+
+.onb-column__body {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    min-height: 80px;
+}
+
+/* ---------- Card (clínica/hospital) ---------- */
+
+.onb-card {
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-line);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: grab;
+    box-shadow: var(--hub-shadow);
+    transition: border-color 0.12s ease, transform 0.08s ease;
+}
+
+.onb-card:hover {
+    border-color: color-mix(in srgb, var(--hub-blue) 40%, var(--hub-line));
+}
+
+.onb-card--dragging {
+    opacity: 0.55;
+    cursor: grabbing;
+}
+
+.onb-card__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.onb-card__kind {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 7px;
+    border-radius: 6px;
+    background: var(--hub-blue-wash);
+    color: var(--hub-blue);
+}
+
+.onb-card__kind--hospital {
+    background: var(--hub-moat-wash);
+    color: var(--hub-moat);
+}
+
+.onb-card__actions {
+    margin-left: auto;
+    display: flex;
+    gap: 2px;
+}
+
+.onb-card__icon-btn {
+    border: none;
+    background: transparent;
+    color: var(--hub-muted);
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
+.onb-card__icon-btn:hover {
+    background: var(--hub-line);
+    color: var(--hub-ink);
+}
+
+.onb-card__icon-btn--danger:hover {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+}
+
+.onb-card__name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hub-ink);
+    margin: 0 0 8px;
+    line-height: 1.25;
+    word-break: break-word;
+}
+
+/* ---------- Tags de projeto (SaaS / BPO) ---------- */
+
+.onb-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.onb-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+}
+
+.onb-tag--moat {
+    background: var(--hub-moat-wash);
+    color: var(--hub-moat);
+    border-color: color-mix(in srgb, var(--hub-moat) 28%, transparent);
+}
+
+.onb-tag--teal {
+    background: var(--hub-teal-wash);
+    color: var(--hub-teal);
+    border-color: color-mix(in srgb, var(--hub-teal) 28%, transparent);
+}
+
+.onb-proj-toggle {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.onb-tag--toggle {
+    cursor: pointer;
+    font-size: 12px;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+/* Estado desligado do toggle — precisa vir depois das cores p/ sobrescrever. */
+.onb-tag--off {
+    background: transparent;
+    color: var(--hub-muted);
+    border-color: var(--hub-line);
+}
+
+/* ---------- Responsável (avatar + nome) ---------- */
+
+.onb-card__owner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--hub-line);
+}
+
+.onb-card__owner-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hub-ink-soft);
+}
+
+.onb-card__owner-empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--hub-muted);
+}
+
+.onb-person {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--hub-ink);
+}
+
+.onb-person--empty {
+    color: var(--hub-muted);
+    font-weight: 500;
+}
+
+.onb-person-group {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hub-muted);
+}
+
+.onb-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    font-size: 12px;
+    color: var(--hub-muted);
+    margin-bottom: 10px;
+}
+
+.onb-card__meta b {
+    color: var(--hub-ink-soft);
+    font-weight: 700;
+}
+
+.onb-card__progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.onb-progress-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--hub-line);
+    overflow: hidden;
+}
+
+.onb-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--hub-green);
+    transition: width 0.2s ease;
+}
+
+.onb-progress-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hub-muted);
+    min-width: 34px;
+    text-align: right;
+}
+
+.onb-add-card {
+    border: 1px dashed var(--hub-line);
+    background: transparent;
+    color: var(--hub-muted);
+    border-radius: 10px;
+    padding: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.onb-add-card:hover {
+    border-color: var(--hub-blue);
+    color: var(--hub-blue);
+    background: var(--hub-blue-wash);
+}
+
+.onb-add-column {
+    flex: 0 0 260px;
+    align-self: stretch;
+    min-height: 120px;
+    border: 1px dashed var(--hub-line);
+    background: transparent;
+    color: var(--hub-muted);
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.onb-add-column:hover {
+    border-color: var(--hub-blue);
+    color: var(--hub-blue);
+    background: var(--hub-blue-wash);
+}
+
+/* ---------- Dialog (config + matriz) ---------- */
+
+.onb-dialog {
+    --hub-line: #c5ced9;
+    --hub-ink: #0c1b2a;
+    --hub-ink-soft: #33445c;
+    --hub-muted: #62718b;
+    --hub-surface: #ffffff;
+    --hub-bg: #f5f6fb;
+    /* Tokens semânticos: o dialog é teleportado p/ o body (fora de .home-page),
+       então precisa redeclarar as cores usadas na matriz/semáforo. */
+    --hub-blue: #1e4fe0;
+    --hub-blue-wash: #eef2fe;
+    --hub-teal: #0e9e92;
+    --hub-teal-wash: #e4f5f2;
+    --hub-amber: #c8841a;
+    --hub-amber-wash: #fbf1de;
+    --hub-coral: #cf4a3e;
+    --hub-coral-wash: #fbe9e7;
+    --hub-green: #168a5a;
+    --hub-green-wash: #e3f3ea;
+    --hub-moat: #6e47c9;
+    --hub-moat-wash: #f0eafb;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.onb-dialog .p-dialog-title {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.onb-section {
+    margin-bottom: 20px;
+}
+
+.onb-section__title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--hub-muted);
+    margin: 0 0 10px;
+}
+
+.onb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.onb-field > label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hub-ink-soft);
+}
+
+.onb-field-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.onb-field-row > .onb-field {
+    flex: 1;
+    min-width: 180px;
+}
+
+/* Editor de unidades / convênios em chips */
+.onb-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.onb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--hub-surface);
+    border: 1px solid var(--hub-line);
+    border-radius: 8px;
+    padding: 4px 6px 4px 10px;
+}
+
+.onb-chip input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--hub-ink);
+    width: 110px;
+    outline: none;
+    font-family: inherit;
+}
+
+.onb-chip__remove {
+    border: none;
+    background: transparent;
+    color: var(--hub-muted);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+}
+
+.onb-chip__remove:hover {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+}
+
+.onb-chip-add {
+    border: 1px dashed var(--hub-line);
+    background: transparent;
+    color: var(--hub-muted);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.onb-chip-add:hover {
+    border-color: var(--hub-blue);
+    color: var(--hub-blue);
+}
+
+/* ---------- Matriz (convênios × unidades) ---------- */
+
+.onb-matrix-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--hub-line);
+    border-radius: 12px;
+    background: var(--hub-surface);
+}
+
+.onb-matrix {
+    display: grid;
+    min-width: max-content;
+}
+
+.onb-matrix__corner,
+.onb-matrix__col-head,
+.onb-matrix__row-head {
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--hub-ink-soft);
+    background: var(--hub-bg);
+    border-bottom: 1px solid var(--hub-line);
+    border-right: 1px solid var(--hub-line);
+    position: sticky;
+    display: flex;
+    align-items: center;
+}
+
+.onb-matrix__corner {
+    top: 0;
+    left: 0;
+    z-index: 3;
+    color: var(--hub-muted);
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.onb-matrix__col-head {
+    top: 0;
+    z-index: 2;
+    justify-content: center;
+    text-align: center;
+}
+
+.onb-matrix__row-head {
+    left: 0;
+    z-index: 1;
+}
+
+.onb-matrix__cell {
+    padding: 8px;
+    border-bottom: 1px solid var(--hub-line);
+    border-right: 1px solid var(--hub-line);
+    min-width: 168px;
+    background: var(--hub-surface);
+}
+
+.onb-matrix__empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--hub-muted);
+    font-size: 13px;
+}
+
+/* ---------- Tile da célula ---------- */
+
+.onb-cell {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--hub-line);
+    border-radius: 10px;
+    background: var(--hub-surface);
+    padding: 9px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.onb-cell:hover {
+    border-color: var(--hub-blue);
+    box-shadow: 0 0 0 3px var(--hub-blue-wash);
+}
+
+.onb-cell--ativo {
+    border-left: 3px solid var(--hub-green);
+}
+
+.onb-cell--inativo {
+    opacity: 0.72;
+    background: var(--hub-bg);
+    border-left: 3px solid var(--hub-line);
+}
+
+.onb-cell__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.onb-cell__ativo {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+
+.onb-cell__ativo--on {
+    background: var(--hub-green-wash);
+    color: var(--hub-green);
+}
+
+.onb-cell__ativo--off {
+    background: var(--hub-line);
+    color: var(--hub-muted);
+}
+
+.onb-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: none;
+    background: currentColor;
+}
+
+.onb-cell__mode {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--hub-line);
+    color: var(--hub-ink-soft);
+}
+
+.onb-cell__mode--portal {
+    background: var(--hub-teal-wash);
+    color: var(--hub-teal);
+}
+
+.onb-cell__ops {
+    display: flex;
+    gap: 6px;
+}
+
+.onb-op-chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    padding: 5px 4px;
+    border-radius: 6px;
+    background: var(--hub-bg);
+    border: 1px solid var(--hub-line);
+    color: var(--hub-ink-soft);
+}
+
+.onb-op-chip--red {
+    background: var(--hub-coral-wash);
+    border-color: color-mix(in srgb, var(--hub-coral) 30%, transparent);
+    color: var(--hub-coral);
+}
+
+.onb-op-chip--amber {
+    background: var(--hub-amber-wash);
+    border-color: color-mix(in srgb, var(--hub-amber) 30%, transparent);
+    color: var(--hub-amber);
+}
+
+.onb-op-chip--green {
+    background: var(--hub-green-wash);
+    border-color: color-mix(in srgb, var(--hub-green) 30%, transparent);
+    color: var(--hub-green);
+}
+
+/* ---------- Conciliação (100% feito → pronto → conciliado) ---------- */
+
+.onb-cell--pronto {
+    border-color: color-mix(in srgb, var(--hub-green) 45%, var(--hub-line));
+    background: color-mix(in srgb, var(--hub-green-wash) 65%, var(--hub-surface));
+}
+
+.onb-cell--conciliado {
+    border-color: var(--hub-green);
+    background: color-mix(in srgb, var(--hub-green) 12%, var(--hub-surface));
+}
+
+.onb-cell__ribbon {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.onb-cell__ribbon--pronto {
+    background: var(--hub-green-wash);
+    color: var(--hub-green);
+}
+
+.onb-cell__ribbon--conciliado {
+    background: var(--hub-green);
+    color: #ffffff;
+}
+
+.onb-concilia {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--hub-line);
+    margin-top: 4px;
+}
+
+.onb-concilia--pronto {
+    background: var(--hub-green-wash);
+    border-color: color-mix(in srgb, var(--hub-green) 30%, transparent);
+}
+
+.onb-concilia--conciliado {
+    background: color-mix(in srgb, var(--hub-green) 12%, var(--hub-surface));
+    border-color: var(--hub-green);
+}
+
+.onb-concilia__info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.onb-concilia__info > i {
+    font-size: 22px;
+    color: var(--hub-green);
+}
+
+.onb-concilia__info strong {
+    display: block;
+    font-size: 14px;
+    color: var(--hub-ink);
+}
+
+.onb-concilia__info span {
+    font-size: 12px;
+    color: var(--hub-muted);
+}
+
+/* ---------- Semáforo (tons) ---------- */
+
+.onb-tone-red {
+    background: var(--hub-coral);
+}
+.onb-tone-amber {
+    background: var(--hub-amber);
+}
+.onb-tone-green {
+    background: var(--hub-green);
+}
+
+.onb-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.onb-status-pill.onb-tone-red {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+}
+.onb-status-pill.onb-tone-amber {
+    background: var(--hub-amber-wash);
+    color: var(--hub-amber);
+}
+.onb-status-pill.onb-tone-green {
+    background: var(--hub-green-wash);
+    color: var(--hub-green);
+}
+.onb-status-pill .onb-status-dot {
+    background: currentColor;
+}
+
+/* ---------- Segmented control (portal/fora, semáforo) ---------- */
+
+.onb-seg {
+    display: inline-flex;
+    background: var(--hub-bg);
+    border: 1px solid var(--hub-line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.onb-seg__btn {
+    border: none;
+    background: transparent;
+    color: var(--hub-muted);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+
+.onb-seg__btn:hover {
+    color: var(--hub-ink);
+}
+
+.onb-seg__btn.active {
+    background: var(--hub-surface);
+    color: var(--hub-ink);
+    box-shadow: 0 1px 2px rgba(12, 27, 42, 0.12);
+}
+
+.onb-seg__btn.active.onb-tone-red {
+    background: var(--hub-coral-wash);
+    color: var(--hub-coral);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hub-coral) 35%, transparent);
+}
+.onb-seg__btn.active.onb-tone-amber {
+    background: var(--hub-amber-wash);
+    color: var(--hub-amber);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hub-amber) 35%, transparent);
+}
+.onb-seg__btn.active.onb-tone-green {
+    background: var(--hub-green-wash);
+    color: var(--hub-green);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hub-green) 35%, transparent);
+}
+
+/* ---------- Cell dialog: operações ---------- */
+
+.onb-op-block {
+    border: 1px solid var(--hub-line);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--hub-surface);
+}
+
+.onb-op-block__head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.onb-op-block__title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hub-ink);
+}
+
+.onb-op-block__sub {
+    font-size: 12px;
+    color: var(--hub-muted);
+    margin-left: auto;
+}
+
+.onb-inline-note {
+    font-size: 12px;
+    color: var(--hub-muted);
+    margin: 4px 0 0;
+}
+
+/* ---------- Dark mode ---------- */
+
+.dark .onboarding-page .onb-column {
+    background: #191919;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .onboarding-page .onb-column__head {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .onboarding-page .onb-card,
+.dark .onboarding-page .onb-cell,
+.dark .onboarding-page .onb-op-block,
+.dark .onboarding-page .onb-matrix-wrap {
+    background: #1e1e1e;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .onboarding-page .onb-column__count {
+    background: #232323;
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.dark .onb-dialog {
+    --hub-surface: #1e1e1e;
+    --hub-bg: #161616;
+    --hub-line: rgba(255, 255, 255, 0.14);
+    --hub-ink: rgba(255, 255, 255, 0.92);
+    --hub-ink-soft: rgba(255, 255, 255, 0.78);
+    --hub-muted: rgba(255, 255, 255, 0.55);
+}
+
+.dark .onb-dialog .onb-matrix__corner,
+.dark .onb-dialog .onb-matrix__col-head,
+.dark .onb-dialog .onb-matrix__row-head {
+    background: #161616;
+}

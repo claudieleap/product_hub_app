@@ -7,6 +7,11 @@ export function setAuthToken(token) {
     authToken = token || null;
 }
 
+/** Lido por outros clients (ex.: commercialClient) que também exigem sessão. */
+export function getAuthToken() {
+    return authToken;
+}
+
 async function request(method, path, body) {
     const response = await fetch(`${baseUrl}${path}`, {
         method,

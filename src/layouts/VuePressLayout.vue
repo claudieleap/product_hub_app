@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { isNavActive, nav, resolveSidebar } from '@/config/site';
+import { homeNavItem, isNavActive, navGroups, resolveSidebar } from '@/config/site';
 import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
 import { useAuth } from '@/composables/useAuth';
@@ -24,7 +24,14 @@ const mobileMenuOpen = ref(false);
 const ASIDE_STORAGE_KEY = 'vp-aside-collapsed';
 
 const { user, isAdmin, logout } = useAuth();
-const visibleNav = computed(() => nav.filter((item) => !item.adminOnly || isAdmin.value));
+const visibleNavGroups = computed(() =>
+    navGroups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => !item.adminOnly || isAdmin.value)
+        }))
+        .filter((group) => group.items.length)
+);
 
 async function onLogout() {
     await logout();
@@ -153,20 +160,34 @@ onUnmounted(() => {
 
             <nav class="vp-aside__nav" aria-label="Seções">
                 <router-link
-                    v-for="item in visibleNav"
-                    :key="item.text"
-                    :to="item.link"
+                    :to="homeNavItem.link"
                     class="vp-aside__nav-link"
-                    :class="{
-                        active: isNavActive(item, route.path),
-                        'vp-aside__nav-link--featured': item.featured
-                    }"
-                    :title="item.text"
+                    :class="{ active: isNavActive(homeNavItem, route.path) }"
+                    :title="homeNavItem.text"
                     @click="closeMobileMenu"
                 >
-                    <RoadmapTypeIcon :icon="item.icon" class="vp-aside__nav-icon" aria-hidden="true" />
-                    <span class="vp-aside__nav-label">{{ item.text }}</span>
+                    <RoadmapTypeIcon :icon="homeNavItem.icon" class="vp-aside__nav-icon" aria-hidden="true" />
+                    <span class="vp-aside__nav-label">{{ homeNavItem.text }}</span>
                 </router-link>
+
+                <div v-for="group in visibleNavGroups" :key="group.text" class="vp-aside__nav-group">
+                    <p v-if="!asideCollapsed" class="vp-aside__nav-group-title">{{ group.text }}</p>
+                    <router-link
+                        v-for="item in group.items"
+                        :key="item.text"
+                        :to="item.link"
+                        class="vp-aside__nav-link"
+                        :class="{
+                            active: isNavActive(item, route.path),
+                            'vp-aside__nav-link--featured': item.featured
+                        }"
+                        :title="item.text"
+                        @click="closeMobileMenu"
+                    >
+                        <RoadmapTypeIcon :icon="item.icon" class="vp-aside__nav-icon" aria-hidden="true" />
+                        <span class="vp-aside__nav-label">{{ item.text }}</span>
+                    </router-link>
+                </div>
             </nav>
 
             <div v-if="sidebarGroups?.length && !asideCollapsed" class="vp-aside__context">

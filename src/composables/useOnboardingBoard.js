@@ -3,23 +3,31 @@ import {
     DEFAULT_MODE,
     DEFAULT_STATUS,
     ONBOARDING_OPERATIONS,
-    ONBOARDING_STORAGE_KEY,
     cellKey
 } from '@/config/onboardingConfig';
-import { createOnboardingSeed } from '@/data/onboardingSeed';
+import { establishmentsApi } from '@/api/establishmentsClient';
+import { useEstablishments } from '@/composables/useEstablishments';
+import { useOnboardingPhases } from '@/composables/useOnboardingPhases';
 
 /**
- * Store singleton (local-first) do board de Onboarding.
+ * Store singleton do board de Onboarding — API-first (backend compartilhado
+ * com o Pipeline comercial via useEstablishments, mesmo registro de
+ * "estabelecimento" visto por dois ângulos).
  *
- * Persiste em localStorage. A forma dos dados foi desenhada para, no futuro,
- * sincronizar com a API (getState/syncState) sem mudar os componentes.
+ * Os diálogos (OnboardingCardDialog/OnboardingCellDialog) editam os campos
+ * direto por v-model (sem passar por um setter) — pra não precisar reescrever
+ * esses componentes, um watcher com debounce sincroniza qualquer mudança pro
+ * backend automaticamente (mesmo espírito do debounce que existia pro
+ * localStorage antes).
  */
 
 const state = reactive({
-    phases: [],
     cards: [],
     hydrated: false
 });
+
+const sharedEstablishments = useEstablishments();
+const onboardingPhases = useOnboardingPhases();
 
 function uid(prefix) {
     return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -49,102 +57,137 @@ export function isCellAllDone(cell) {
     return ONBOARDING_OPERATIONS.every((op) => cell?.ops?.[op.id]?.status === 'feito');
 }
 
-function normalizeCard(card) {
+function cellFromApi(apiCell) {
+    const ops = apiCell.ops && Object.keys(apiCell.ops).length ? apiCell.ops : defaultOps();
     return {
-        id: card.id ?? uid('onb'),
-        phaseId: card.phaseId ?? 'backlog',
-        order: Number.isFinite(card.order) ? card.order : 0,
-        name: card.name ?? 'Nova clínica',
-        kind: card.kind ?? 'clinica',
-        projects: Array.isArray(card.projects) ? [...card.projects] : [],
-        responsavelId: card.responsavelId ?? null,
-        notes: card.notes ?? '',
-        units: Array.isArray(card.units) ? card.units.map((u) => ({ ...u })) : [],
-        convenios: Array.isArray(card.convenios) ? card.convenios.map((c) => ({ ...c })) : [],
-        cells: card.cells && typeof card.cells === 'object' ? { ...card.cells } : {},
-        createdAt: card.createdAt ?? new Date().toISOString()
+        ativo: Boolean(apiCell.ativo),
+        modo: apiCell.modo || DEFAULT_MODE,
+        portalLogin: apiCell.portalLogin || '',
+        portalSenha: apiCell.portalSenha || '',
+        detalhe: apiCell.detalhe || '',
+        conciliado: Boolean(apiCell.conciliado),
+        ops
     };
 }
 
-function hydrate() {
-    if (state.hydrated) return;
-
-    let loaded = null;
-    try {
-        const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
-        if (raw) loaded = JSON.parse(raw);
-    } catch (error) {
-        console.warn('[onboarding] falha ao ler estado local; usando seed.', error);
-    }
-
-    const source = loaded && Array.isArray(loaded.phases) && loaded.phases.length
-        ? loaded
-        : createOnboardingSeed();
-
-    state.phases = source.phases.map((phase) => ({ ...phase }));
-    state.cards = (source.cards ?? []).map(normalizeCard);
-    state.hydrated = true;
+function cardFromEstablishment(establishment, detail) {
+    return {
+        id: establishment.id,
+        phaseId: establishment.onboardingPhaseId ?? onboardingPhases.phases.value[0]?.id ?? 'backlog',
+        order: Number.isFinite(establishment.onboardingOrderIndex) ? establishment.onboardingOrderIndex : 0,
+        name: establishment.fantasia ?? 'Novo estabelecimento',
+        kind: establishment.kind ?? 'clinica',
+        projects: Array.isArray(establishment.projects) ? [...establishment.projects] : [],
+        responsavelId: establishment.onboardingResponsavelId ?? null,
+        notes: establishment.observacao ?? '',
+        nextAppointment: establishment.nextAppointment ?? null,
+        units: (detail?.units ?? []).map((u) => ({ ...u })),
+        convenios: (detail?.convenios ?? []).map((c) => ({ ...c })),
+        cells: Object.fromEntries(
+            (detail?.cells ?? []).map((c) => [cellKey(c.convenioId, c.unitId), cellFromApi(c)])
+        ),
+        createdAt: establishment.createdAt ?? new Date().toISOString()
+    };
 }
 
-let persistTimer = null;
-function persist() {
-    if (typeof window === 'undefined') return;
-    clearTimeout(persistTimer);
-    persistTimer = setTimeout(() => {
-        try {
-            localStorage.setItem(
-                ONBOARDING_STORAGE_KEY,
-                JSON.stringify({ phases: state.phases, cards: state.cards })
-            );
-        } catch (error) {
-            console.warn('[onboarding] falha ao persistir estado local.', error);
-        }
-    }, 200);
+let hydratePromise = null;
+function hydrate() {
+    if (hydratePromise) return hydratePromise;
+
+    hydratePromise = (async () => {
+        await Promise.all([sharedEstablishments.ready, onboardingPhases.ready]);
+
+        const onboardingItems = sharedEstablishments.establishments.value.filter((e) => e.onboardingPhaseId);
+        const details = await Promise.all(
+            onboardingItems.map((e) => establishmentsApi.detail(e.id).catch(() => null))
+        );
+
+        state.cards = onboardingItems.map((establishment, index) => cardFromEstablishment(establishment, details[index]));
+        state.hydrated = true;
+    })();
+
+    return hydratePromise;
 }
 
 hydrate();
-watch(
-    () => [state.phases, state.cards],
-    persist,
-    { deep: true }
-);
+
+/** Reflete campos "de cartão" no registro compartilhado (visível no Pipeline também). */
+function syncSharedFields(card) {
+    const shared = sharedEstablishments.getEstablishment(card.id);
+    if (!shared) return;
+    shared.fantasia = card.name;
+    shared.kind = card.kind;
+    shared.projects = [...card.projects];
+    shared.onboardingResponsavelId = card.responsavelId;
+    shared.observacao = card.notes;
+    shared.onboardingPhaseId = card.phaseId;
+    shared.onboardingOrderIndex = card.order;
+}
+
+async function persistCard(card) {
+    syncSharedFields(card);
+    await establishmentsApi.update(card.id, {
+        fantasia: card.name,
+        kind: card.kind,
+        projects: card.projects,
+        onboardingResponsavelId: card.responsavelId,
+        observacao: card.notes,
+        onboardingPhaseId: card.phaseId,
+        onboardingOrderIndex: card.order
+    });
+}
+
+async function persistCells(card) {
+    await Promise.all(
+        Object.entries(card.cells).map(([key, cell]) => {
+            const [convenioId, unitId] = key.split('::');
+            return establishmentsApi.updateCell(card.id, convenioId, unitId, cell);
+        })
+    );
+}
+
+let syncTimer = null;
+function schedulePersist() {
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+        state.cards.forEach((card) => {
+            persistCard(card).catch((error) => console.warn('[onboarding] falha ao sincronizar cartão.', error));
+            persistCells(card).catch((error) => console.warn('[onboarding] falha ao sincronizar matriz.', error));
+        });
+    }, 500);
+}
+
+watch(() => state.cards, schedulePersist, { deep: true });
 
 /* ---------- fases (colunas) ---------- */
 
-function addPhase(title = 'Nova fase') {
-    const phase = { id: uid('phase'), title: title.trim() || 'Nova fase', hint: '' };
-    state.phases.push(phase);
-    return phase;
+async function addPhase(title = 'Nova fase') {
+    return onboardingPhases.addPhase(title);
 }
 
-function renamePhase(phaseId, title) {
-    const phase = state.phases.find((p) => p.id === phaseId);
-    if (phase) phase.title = title.trim() || phase.title;
+async function renamePhase(phaseId, title) {
+    return onboardingPhases.renamePhase(phaseId, title);
 }
 
-function removePhase(phaseId) {
-    if (state.phases.length <= 1) return false;
-    const index = state.phases.findIndex((p) => p.id === phaseId);
+async function removePhase(phaseId) {
+    const phases = onboardingPhases.phases.value;
+    if (phases.length <= 1) return false;
+    const index = phases.findIndex((p) => p.id === phaseId);
     if (index === -1) return false;
 
-    // Move cards da fase removida para a fase anterior (ou a primeira).
-    const fallback = state.phases[index - 1]?.id ?? state.phases.find((p) => p.id !== phaseId)?.id;
+    const fallback = phases[index - 1]?.id ?? phases.find((p) => p.id !== phaseId)?.id;
     state.cards.forEach((card) => {
         if (card.phaseId === phaseId) card.phaseId = fallback;
     });
-    state.phases.splice(index, 1);
-    return true;
+
+    return onboardingPhases.removePhase(phaseId);
 }
 
-function movePhase(phaseId, direction) {
-    const index = state.phases.findIndex((p) => p.id === phaseId);
-    const target = index + direction;
-    if (index === -1 || target < 0 || target >= state.phases.length) return;
-    const [phase] = state.phases.splice(index, 1);
-    state.phases.splice(target, 0, phase);
+async function movePhase(phaseId, direction) {
+    return onboardingPhases.movePhase(phaseId, direction);
 }
 
-/* ---------- cards (clínicas/hospitais) ---------- */
+/* ---------- cards (estabelecimentos) ---------- */
 
 function cardsByPhase(phaseId) {
     return state.cards
@@ -160,18 +203,34 @@ function getCard(cardId) {
     return state.cards.find((card) => card.id === cardId) ?? null;
 }
 
-function addCard({ phaseId, name = 'Nova clínica', kind = 'clinica' } = {}) {
-    const targetPhase = phaseId ?? state.phases[0]?.id ?? 'backlog';
+function addCard({ phaseId, name = 'Novo estabelecimento', kind = 'clinica' } = {}) {
+    const targetPhase = phaseId ?? onboardingPhases.phases.value[0]?.id ?? 'backlog';
     const order = countByPhase(targetPhase);
-    const card = normalizeCard({
+
+    const card = {
         id: uid('onb'),
         phaseId: targetPhase,
         order,
         name,
         kind,
+        projects: [],
+        responsavelId: null,
+        notes: '',
+        units: [],
+        convenios: [],
+        cells: {},
         createdAt: new Date().toISOString()
-    });
+    };
+
     state.cards.push(card);
+
+    establishmentsApi
+        .create({ id: card.id, fantasia: name, kind, onboardingPhaseId: targetPhase, onboardingOrderIndex: order })
+        .then((created) => {
+            sharedEstablishments.establishments.value.push({ ...created, especialidades: [], projects: created.projects ?? [] });
+        })
+        .catch((error) => console.warn('[onboarding] falha ao criar estabelecimento.', error));
+
     return card;
 }
 
@@ -183,6 +242,8 @@ function updateCard(cardId, patch = {}) {
     if (patch.projects !== undefined) card.projects = [...patch.projects];
     if (patch.responsavelId !== undefined) card.responsavelId = patch.responsavelId;
     if (patch.notes !== undefined) card.notes = patch.notes;
+
+    persistCard(card).catch((error) => console.warn('[onboarding] falha ao salvar cartão.', error));
 }
 
 function toggleCardProject(cardId, projectId) {
@@ -193,11 +254,18 @@ function toggleCardProject(cardId, projectId) {
     } else {
         card.projects = [...card.projects, projectId];
     }
+
+    persistCard(card).catch((error) => console.warn('[onboarding] falha ao salvar cartão.', error));
 }
 
 function removeCard(cardId) {
     const index = state.cards.findIndex((card) => card.id === cardId);
-    if (index !== -1) state.cards.splice(index, 1);
+    if (index === -1) return;
+    state.cards.splice(index, 1);
+
+    sharedEstablishments
+        .removeEstablishment(cardId)
+        .catch((error) => console.warn('[onboarding] falha ao excluir estabelecimento.', error));
 }
 
 function moveCardToPhase(cardId, phaseId) {
@@ -205,6 +273,9 @@ function moveCardToPhase(cardId, phaseId) {
     if (!card || card.phaseId === phaseId) return false;
     card.phaseId = phaseId;
     card.order = countByPhase(phaseId);
+
+    persistCard(card).catch((error) => console.warn('[onboarding] falha ao mover cartão.', error));
+
     return true;
 }
 
@@ -215,6 +286,14 @@ function addUnit(cardId, name) {
     if (!card) return null;
     const unit = { id: uid('un'), name: name?.trim() || `Unidade ${card.units.length + 1}` };
     card.units.push(unit);
+
+    establishmentsApi
+        .createUnit(cardId, unit.name)
+        .then((created) => {
+            unit.id = created.id;
+        })
+        .catch((error) => console.warn('[onboarding] falha ao criar unidade.', error));
+
     return unit;
 }
 
@@ -227,10 +306,11 @@ function removeUnit(cardId, unitId) {
     const card = getCard(cardId);
     if (!card) return;
     card.units = card.units.filter((u) => u.id !== unitId);
-    // Limpa células órfãs desta unidade.
     Object.keys(card.cells).forEach((key) => {
         if (key.endsWith(`::${unitId}`)) delete card.cells[key];
     });
+
+    establishmentsApi.deleteUnit(unitId).catch((error) => console.warn('[onboarding] falha ao excluir unidade.', error));
 }
 
 /* ---------- convênios ---------- */
@@ -240,6 +320,14 @@ function addConvenio(cardId, name) {
     if (!card) return null;
     const convenio = { id: uid('cv'), name: name?.trim() || `Convênio ${card.convenios.length + 1}` };
     card.convenios.push(convenio);
+
+    establishmentsApi
+        .createConvenio(cardId, convenio.name)
+        .then((created) => {
+            convenio.id = created.id;
+        })
+        .catch((error) => console.warn('[onboarding] falha ao criar convênio.', error));
+
     return convenio;
 }
 
@@ -255,16 +343,16 @@ function removeConvenio(cardId, convenioId) {
     Object.keys(card.cells).forEach((key) => {
         if (key.startsWith(`${convenioId}::`)) delete card.cells[key];
     });
+
+    establishmentsApi.deleteConvenio(convenioId).catch((error) => console.warn('[onboarding] falha ao excluir convênio.', error));
 }
 
 /* ---------- células (convênio × unidade) ---------- */
 
-/** Leitura: devolve a célula persistida ou um default (não materializa). */
 function readCell(card, convenioId, unitId) {
     return card?.cells?.[cellKey(convenioId, unitId)] ?? defaultCell();
 }
 
-/** Garante que a célula exista no card e devolve a referência reativa. */
 function ensureCell(cardId, convenioId, unitId) {
     const card = getCard(cardId);
     if (!card) return null;
@@ -283,20 +371,17 @@ function setOperation(cardId, convenioId, unitId, opId, patch = {}) {
     const cell = ensureCell(cardId, convenioId, unitId);
     if (!cell) return;
     cell.ops[opId] = { ...cell.ops[opId], ...patch };
-    // Se deixou de estar 100% concluída, não pode seguir marcada como conciliada.
     if (!isCellAllDone(cell)) cell.conciliado = false;
 }
 
 function setConciliado(cardId, convenioId, unitId, value) {
     const cell = ensureCell(cardId, convenioId, unitId);
     if (!cell) return;
-    // Só concilia quando as 3 operações estão feitas.
     cell.conciliado = value ? isCellAllDone(cell) : false;
 }
 
 /* ---------- resumo p/ o tile da matriz ---------- */
 
-/** Progresso geral de um card: % de operações "feito" entre células ativas. */
 function cardProgress(card) {
     let total = 0;
     let done = 0;
@@ -316,7 +401,7 @@ function cardProgress(card) {
 export function useOnboardingBoard() {
     return {
         state,
-        phases: computed(() => state.phases),
+        phases: onboardingPhases.phases,
         cards: computed(() => state.cards),
         hydrated: computed(() => state.hydrated),
         // fases

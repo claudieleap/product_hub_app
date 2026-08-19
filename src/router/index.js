@@ -7,6 +7,9 @@ import RoadmapBacklogView from '@/views/RoadmapBacklogView.vue';
 import RoadmapEntregasView from '@/views/RoadmapEntregasView.vue';
 import MetricsConfigView from '@/views/MetricsConfigView.vue';
 import OnboardingView from '@/views/OnboardingView.vue';
+import CommercialPipelineView from '@/views/CommercialPipelineView.vue';
+import CommercialDashboardView from '@/views/CommercialDashboardView.vue';
+import CalendarView from '@/views/CalendarView.vue';
 import LoginView from '@/views/LoginView.vue';
 import ChangePasswordView from '@/views/ChangePasswordView.vue';
 import ContasView from '@/views/ContasView.vue';
@@ -68,6 +71,24 @@ const router = createRouter({
             name: 'onboarding',
             component: OnboardingView,
             meta: { title: 'Onboarding de clínicas' }
+        },
+        {
+            path: '/comercial/pipeline',
+            name: 'commercial-pipeline',
+            component: CommercialPipelineView,
+            meta: { title: 'Pipeline comercial' }
+        },
+        {
+            path: '/comercial/dashboard',
+            name: 'commercial-dashboard',
+            component: CommercialDashboardView,
+            meta: { title: 'Dashboard comercial' }
+        },
+        {
+            path: '/comercial/calendario',
+            name: 'commercial-calendar',
+            component: CalendarView,
+            meta: { title: 'Calendário' }
         },
         {
             path: '/configuracoes/metricas',

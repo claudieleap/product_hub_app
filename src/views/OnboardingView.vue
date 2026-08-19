@@ -113,13 +113,13 @@ function progressOf(card) {
             >
                 <template #actions>
                     <div class="roadmap-stats roadmap-stats--inline">
-                        <span class="roadmap-stat"><b>{{ totalCards }}</b> clínicas</span>
+                        <span class="roadmap-stat"><b>{{ totalCards }}</b> estabelecimentos</span>
                         <span class="roadmap-stat"><b>{{ phases.length }}</b> fases</span>
                     </div>
                     <Button
                         type="button"
                         icon="pi pi-plus"
-                        label="Nova clínica"
+                        label="Novo estabelecimento"
                         @click="handleAddCard(phases[0]?.id)"
                     />
                 </template>
@@ -249,6 +249,16 @@ function progressOf(card) {
                                     <span><b>{{ card.convenios.length }}</b> convênios</span>
                                 </div>
 
+                                <div v-if="card.nextAppointment" class="onb-card__meta" style="margin-bottom: 10px">
+                                    <span>
+                                        <i class="pi pi-calendar" />
+                                        {{ card.nextAppointment.date }} · {{ card.nextAppointment.time }}
+                                        <template v-if="getPersonMeta(card.nextAppointment.responsavelId)">
+                                            · {{ getPersonMeta(card.nextAppointment.responsavelId).name }}
+                                        </template>
+                                    </span>
+                                </div>
+
                                 <div class="onb-card__progress">
                                     <span class="onb-progress-track">
                                         <span
@@ -275,7 +285,7 @@ function progressOf(card) {
                                 class="onb-add-card"
                                 @click="handleAddCard(phase.id)"
                             >
-                                <i class="pi pi-plus" /> Adicionar clínica
+                                <i class="pi pi-plus" /> Adicionar estabelecimento
                             </button>
                         </div>
                     </section>

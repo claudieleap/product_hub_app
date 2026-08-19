@@ -249,6 +249,24 @@ a {
     text-overflow: ellipsis;
 }
 
+.vp-aside__nav-group + .vp-aside__nav-group {
+    margin-top: 14px;
+}
+
+.vp-aside__nav-group-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--vp-c-text-3);
+    margin: 10px 0 4px;
+    padding: 0 12px;
+}
+
+.vp-aside--collapsed .vp-aside__nav-group-title {
+    display: none;
+}
+
 .vp-aside--collapsed .vp-aside__nav {
     padding: 8px 10px;
 }

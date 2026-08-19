@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue';
 import {
-    ONBOARDING_KINDS,
     ONBOARDING_PROJECTS,
     ONBOARDING_PEOPLE
 } from '@/config/onboardingConfig';
@@ -9,6 +8,8 @@ import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import OnboardingCellDialog from '@/components/OnboardingCellDialog.vue';
 import OnboardingCellTile from '@/components/OnboardingCellTile.vue';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
+import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
+import EstablishmentComments from '@/components/EstablishmentComments.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -22,7 +23,6 @@ const {
     getCard,
     updateCard,
     removeCard,
-    toggleCardProject,
     addUnit,
     removeUnit,
     addConvenio,
@@ -32,8 +32,6 @@ const {
 } = useOnboardingBoard();
 
 const card = computed(() => getCard(props.cardId));
-const kinds = ONBOARDING_KINDS;
-const projects = ONBOARDING_PROJECTS;
 
 const peopleGroups = ONBOARDING_PROJECTS.map((project) => ({
     label: project.label,
@@ -63,18 +61,6 @@ const gridStyle = computed(() => {
 
 const progress = computed(() => (card.value ? cardProgress(card.value) : { pct: 0, done: 0, total: 0 }));
 
-function setKind(kindId) {
-    if (card.value) updateCard(card.value.id, { kind: kindId });
-}
-
-function isProjectOn(projectId) {
-    return card.value?.projects?.includes(projectId) ?? false;
-}
-
-function toggleProject(projectId) {
-    if (card.value) toggleCardProject(card.value.id, projectId);
-}
-
 function openCell(convenio, unit) {
     activeConvenio.value = convenio;
     activeUnit.value = unit;
@@ -103,49 +89,24 @@ function confirmDelete() {
         :draggable="false"
     >
         <template v-if="card">
+        <Tabs value="dados">
+            <TabList>
+                <Tab value="dados">Dados</Tab>
+                <Tab value="onboarding">Onboarding</Tab>
+                <Tab value="comentarios">Comentários</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel value="dados">
+                    <EstablishmentDataForm :id="card.id" />
+                </TabPanel>
+                <TabPanel value="comentarios">
+                    <EstablishmentComments :id="card.id" />
+                </TabPanel>
+                <TabPanel value="onboarding">
             <!-- Configuração do estabelecimento -->
             <div class="onb-section">
                 <p class="onb-section__title">Estabelecimento</p>
-                <div class="onb-field-row">
-                    <div class="onb-field">
-                        <label>Nome</label>
-                        <InputText v-model="card.name" placeholder="Nome da clínica ou hospital" />
-                    </div>
-                    <div class="onb-field" style="flex: 0 0 auto">
-                        <label>Tipo</label>
-                        <div class="onb-seg">
-                            <button
-                                v-for="kind in kinds"
-                                :key="kind.id"
-                                type="button"
-                                class="onb-seg__btn"
-                                :class="{ active: card.kind === kind.id }"
-                                @click="setKind(kind.id)"
-                            >
-                                <i :class="kind.icon" />
-                                {{ kind.label }}
-                            </button>
-                        </div>
-                    </div>
-                    <div class="onb-field" style="flex: 0 0 auto">
-                        <label>Projeto <span style="font-weight: 400; color: var(--hub-muted)">(SaaS, BPO ou os dois)</span></label>
-                        <div class="onb-proj-toggle">
-                            <button
-                                v-for="project in projects"
-                                :key="project.id"
-                                type="button"
-                                class="onb-tag onb-tag--toggle"
-                                :class="[`onb-tag--${project.tone}`, { 'onb-tag--off': !isProjectOn(project.id) }]"
-                                @click="toggleProject(project.id)"
-                            >
-                                <i :class="isProjectOn(project.id) ? 'pi pi-check' : project.icon" />
-                                {{ project.label }}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="onb-field" style="margin-top: 4px; max-width: 340px">
+                <div class="onb-field" style="max-width: 340px">
                     <label>Responsável</label>
                     <Select
                         :model-value="card.responsavelId"
@@ -264,6 +225,9 @@ function confirmDelete() {
                     </p>
                 </div>
             </div>
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
 
             <OnboardingCellDialog
                 v-model:visible="cellDialogVisible"

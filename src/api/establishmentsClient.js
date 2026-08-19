@@ -70,9 +70,12 @@ export const establishmentsApi = {
         request('PUT', `/establishments/${encodeURIComponent(establishmentId)}/cells/${encodeURIComponent(convenioId)}/${encodeURIComponent(unitId)}`, patch),
 
     listAppointments: (start, end) => request('GET', `/establishments/appointments?start=${start}&end=${end}`),
+    listAppointmentsForEstablishment: (establishmentId) => request('GET', `/establishments/${encodeURIComponent(establishmentId)}/appointments`),
     createAppointment: (establishmentId, payload) => request('POST', `/establishments/${encodeURIComponent(establishmentId)}/appointments`, payload),
     updateAppointment: (establishmentId, appointmentId, payload) =>
         request('PUT', `/establishments/${encodeURIComponent(establishmentId)}/appointments/${encodeURIComponent(appointmentId)}`, payload),
+    deleteAppointment: (establishmentId, appointmentId) =>
+        request('DELETE', `/establishments/${encodeURIComponent(establishmentId)}/appointments/${encodeURIComponent(appointmentId)}`),
 
     async import(file) {
         const response = await fetch(`${baseUrl}/establishments/import`, {

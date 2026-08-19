@@ -5,11 +5,13 @@ import {
     ONBOARDING_PEOPLE
 } from '@/config/onboardingConfig';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
+import { useEstablishments } from '@/composables/useEstablishments';
 import OnboardingCellDialog from '@/components/OnboardingCellDialog.vue';
 import OnboardingCellTile from '@/components/OnboardingCellTile.vue';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
+import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -31,7 +33,26 @@ const {
     cardProgress
 } = useOnboardingBoard();
 
+const { getEstablishment, moveToStage } = useEstablishments();
+
 const card = computed(() => getCard(props.cardId));
+const establishment = computed(() => (card.value ? getEstablishment(card.value.id) : null));
+
+const stageChanging = ref(false);
+const stageError = ref(null);
+
+async function onStageChange(stageId) {
+    if (!establishment.value) return;
+    stageChanging.value = true;
+    stageError.value = null;
+    try {
+        await moveToStage(establishment.value.id, stageId);
+    } catch (error) {
+        stageError.value = error.message || 'Não foi possível mover o estabelecimento.';
+    } finally {
+        stageChanging.value = false;
+    }
+}
 
 const peopleGroups = ONBOARDING_PROJECTS.map((project) => ({
     label: project.label,
@@ -89,6 +110,14 @@ function confirmDelete() {
         :draggable="false"
     >
         <template v-if="card">
+        <CommercialStageStepper
+            v-if="establishment?.stageId"
+            :model-value="establishment.stageId"
+            :loading="stageChanging"
+            @update:model-value="onStageChange"
+        />
+        <p v-if="stageError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e); margin: -10px 0 14px">{{ stageError }}</p>
+
         <Tabs value="dados">
             <TabList>
                 <Tab value="dados">Dados</Tab>

@@ -288,16 +288,124 @@
     --hub-muted: #62718b;
     --hub-surface: #ffffff;
     --hub-bg: #f5f6fb;
+    /* Tokens semânticos: o dialog é teleportado p/ o body (fora de .commercial-page),
+       então precisa redeclarar as cores usadas no stepper/matriz. */
     --hub-blue: #1e4fe0;
     --hub-blue-wash: #eef2fe;
     --hub-teal: #0e9e92;
     --hub-teal-wash: #e4f5f2;
+    --hub-coral: #cf4a3e;
+    --hub-coral-wash: #fbe9e7;
+    --hub-green: #168a5a;
+    --hub-green-wash: #e3f3ea;
+    --hub-moat: #6e47c9;
+    --hub-moat-wash: #f0eafb;
     font-family: Inter, system-ui, sans-serif;
 }
 
 .com-dialog .p-dialog-title {
     font-size: 16px;
     font-weight: 700;
+}
+
+/* ---------- Stepper de estágio (acima das abas do dialog) ---------- */
+
+.com-stepper {
+    display: flex;
+    align-items: flex-start;
+    padding: 4px 4px 16px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--hub-line);
+}
+
+.com-stepper__connector {
+    flex: 1 1 auto;
+    height: 2px;
+    background: var(--hub-line);
+    margin-top: 11px;
+    min-width: 12px;
+}
+
+.com-stepper__connector--done {
+    background: var(--hub-green);
+}
+
+.com-stepper__step {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    padding: 0 2px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.com-stepper__step:disabled {
+    cursor: default;
+}
+
+.com-stepper__node {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--hub-line);
+    background: var(--hub-surface);
+    color: #fff;
+    font-size: 12px;
+    flex: none;
+}
+
+.com-stepper__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.com-stepper__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--hub-muted);
+    white-space: nowrap;
+}
+
+.com-stepper__step--done .com-stepper__node {
+    border-color: var(--hub-green);
+    background: var(--hub-green);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hub-green) 20%, transparent);
+}
+
+.com-stepper__step--done .com-stepper__label {
+    color: var(--hub-green);
+    font-weight: 800;
+}
+
+.com-stepper__step--current .com-stepper__node {
+    border-color: var(--hub-blue);
+    background: var(--hub-blue);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hub-blue) 20%, transparent);
+}
+
+.com-stepper__step--current .com-stepper__label {
+    color: var(--hub-blue);
+    font-weight: 800;
+}
+
+.com-stepper__step--lost .com-stepper__label {
+    color: var(--hub-coral);
+}
+
+.com-stepper__step--lost.com-stepper__step--current .com-stepper__node,
+.com-stepper__step--lost.com-stepper__step--done .com-stepper__node {
+    border-color: var(--hub-coral);
+    background: var(--hub-coral);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hub-coral) 20%, transparent);
 }
 
 .com-section {

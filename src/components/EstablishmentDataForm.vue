@@ -1,18 +1,17 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
 import { useEstablishments } from '@/composables/useEstablishments';
-import { COMMERCIAL_STAGES } from '@/config/commercialConfig';
 import { ONBOARDING_KINDS, ONBOARDING_PROJECTS } from '@/config/onboardingConfig';
 import '@/assets/commercial.css';
 import '@/assets/onboarding.css';
 
 const props = defineProps({
     id: { type: String, default: '' },
-    /** Esconde o seletor de estágio (útil quando o card ainda não entrou no Pipeline). */
-    showStage: { type: Boolean, default: true }
+    /** Esconde a barra de "Salvar alterações" (quando o dialog pai renderiza seu próprio botão, ex.: junto do Excluir). */
+    hideSaveButton: { type: Boolean, default: false }
 });
 
-const { getEstablishment, moveToStage, updateFields, specialties, cities } = useEstablishments();
+const { getEstablishment, updateFields, specialties, cities } = useEstablishments();
 
 const establishment = computed(() => getEstablishment(props.id));
 
@@ -117,16 +116,6 @@ function removeEspecialidade(value) {
     especialidadesDraft.value = especialidadesDraft.value.filter((esp) => esp !== value);
 }
 
-async function onStageChange(stageId) {
-    if (!establishment.value) return;
-    saveError.value = null;
-    try {
-        await moveToStage(establishment.value.id, stageId);
-    } catch (error) {
-        saveError.value = error.message || 'Não foi possível mover o estabelecimento.';
-    }
-}
-
 async function saveChanges() {
     if (!establishment.value) return;
     saving.value = true;
@@ -142,23 +131,12 @@ async function saveChanges() {
         saving.value = false;
     }
 }
+
+defineExpose({ isDirty, saving, saveError, saveChanges });
 </script>
 
 <template>
     <template v-if="establishment">
-        <div v-if="showStage && establishment.stageId" class="com-section">
-            <p class="com-section__title">Estágio no funil</p>
-            <Select
-                :model-value="establishment.stageId"
-                :options="COMMERCIAL_STAGES"
-                option-label="title"
-                option-value="id"
-                class="w-full"
-                append-to="body"
-                @update:model-value="onStageChange"
-            />
-        </div>
-
         <div class="com-section">
             <p class="com-section__title"><i class="pi pi-building" /> Dados Corporativos</p>
             <div class="com-field-row">
@@ -287,7 +265,7 @@ async function saveChanges() {
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 10px; position: sticky; bottom: 0; background: var(--hub-surface); padding-top: 8px">
+        <div v-if="!hideSaveButton" style="display: flex; align-items: center; gap: 10px; position: sticky; bottom: 0; background: var(--hub-surface); padding-top: 8px">
             <Button type="button" label="Salvar alterações" :loading="saving" :disabled="!isDirty" @click="saveChanges" />
             <span v-if="saveError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e)">{{ saveError }}</span>
             <span v-else-if="isDirty" style="font-size: 12px; color: var(--hub-muted)">Alterações não salvas</span>

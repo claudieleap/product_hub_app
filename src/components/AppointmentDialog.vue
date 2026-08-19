@@ -15,7 +15,7 @@ const props = defineProps({
     appointment: { type: Object, default: null }
 });
 
-const emit = defineEmits(['created', 'updated']);
+const emit = defineEmits(['created', 'updated', 'deleted']);
 
 const { establishments, createAppointment } = useEstablishments();
 
@@ -31,6 +31,7 @@ const location = ref('');
 const paymentLink = ref('');
 const responsavelIds = ref([]);
 const saving = ref(false);
+const deleting = ref(false);
 const error = ref(null);
 
 const people = ONBOARDING_PEOPLE;
@@ -117,6 +118,24 @@ async function submit() {
         error.value = err.message || 'Não foi possível salvar o agendamento.';
     } finally {
         saving.value = false;
+    }
+}
+
+async function remove() {
+    if (!isEditing.value) return;
+    if (!window.confirm('Excluir este agendamento? Essa ação não pode ser desfeita.')) return;
+
+    deleting.value = true;
+    error.value = null;
+
+    try {
+        await establishmentsApi.deleteAppointment(selectedEstablishment.value.id, props.appointment.id);
+        emit('deleted');
+        visible.value = false;
+    } catch (err) {
+        error.value = err.message || 'Não foi possível excluir o agendamento.';
+    } finally {
+        deleting.value = false;
     }
 }
 </script>
@@ -227,6 +246,16 @@ async function submit() {
 
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 18px">
             <Button type="button" :label="isEditing ? 'Salvar alterações' : 'Agendar'" :loading="saving" :disabled="!canSubmit" @click="submit" />
+            <Button
+                v-if="isEditing"
+                type="button"
+                label="Excluir"
+                severity="danger"
+                text
+                icon="pi pi-trash"
+                :loading="deleting"
+                @click="remove"
+            />
             <span v-if="error" style="font-size: 12px; color: var(--hub-coral, #cf4a3e)">{{ error }}</span>
         </div>
     </Dialog>

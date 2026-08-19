@@ -4,6 +4,7 @@ import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { authApi } from '@/api/authClient';
 import { useAuth } from '@/composables/useAuth';
+import '@/assets/commercial.css';
 
 const { user: currentUser } = useAuth();
 
@@ -12,6 +13,7 @@ const loading = ref(true);
 const loadError = ref('');
 const feedback = ref('');
 
+const createDialogVisible = ref(false);
 const form = ref({ name: '', username: '', email: '', role: 'user' });
 const creating = ref(false);
 const formError = ref('');
@@ -34,6 +36,12 @@ async function refresh() {
     }
 }
 
+function openCreateDialog() {
+    form.value = { name: '', username: '', email: '', role: 'user' };
+    formError.value = '';
+    createDialogVisible.value = true;
+}
+
 async function onCreate() {
     if (!form.value.name.trim() || !form.value.username.trim()) {
         formError.value = 'Preencha nome e usuário.';
@@ -50,7 +58,7 @@ async function onCreate() {
             role: form.value.role
         });
         feedback.value = `Conta "${form.value.username}" criada com a senha padrão Mudar@2026.`;
-        form.value = { name: '', username: '', email: '', role: 'user' };
+        createDialogVisible.value = false;
         await refresh();
     } catch (err) {
         formError.value = err.fields
@@ -103,150 +111,127 @@ onMounted(refresh);
             <PageHeader
                 eyebrow="Administração"
                 title="Contas"
-                subtitle="Crie acessos para o time. Senha padrão de novas contas: Mudar@2026."
-            />
+                subtitle="Contas do time. Senha padrão de novas contas: Mudar@2026."
+            >
+                <template #actions>
+                    <Button text icon="pi pi-refresh" label="Atualizar" @click="refresh" />
+                    <Button icon="pi pi-user-plus" label="Cadastrar novo" @click="openCreateDialog" />
+                </template>
+            </PageHeader>
 
-            <div class="contas-grid">
-                <!-- Criar conta -->
-                <section class="contas-card">
-                    <h2 class="contas-card__title">Nova conta</h2>
-                    <div class="contas-form">
-                        <label class="contas-field">
-                            <span>Nome</span>
-                            <InputText v-model="form.name" placeholder="Nome completo" />
-                        </label>
-                        <label class="contas-field">
-                            <span>Usuário</span>
-                            <InputText v-model="form.username" placeholder="ex.: joao (sem espaços)" />
-                        </label>
-                        <label class="contas-field">
-                            <span>E-mail (opcional)</span>
-                            <InputText v-model="form.email" placeholder="para reset por e-mail no futuro" />
-                        </label>
-                        <label class="contas-field">
-                            <span>Papel</span>
-                            <Select
-                                v-model="form.role"
-                                :options="roleOptions"
-                                option-label="label"
-                                option-value="value"
-                            />
-                        </label>
-                        <p v-if="formError" class="contas-error">{{ formError }}</p>
-                        <Button
-                            label="Criar conta"
-                            icon="pi pi-user-plus"
-                            :loading="creating"
-                            @click="onCreate"
+            <p v-if="feedback" class="contas-feedback">{{ feedback }}</p>
+            <p v-if="loadError" class="contas-error">{{ loadError }}</p>
+
+            <section class="contas-card">
+                <p v-if="loading" class="contas-muted">Carregando…</p>
+
+                <div v-else class="com-table-wrap">
+                    <table class="com-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Usuário</th>
+                                <th>Papel</th>
+                                <th>Senha</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="u in users" :key="u.id">
+                                <td>{{ u.name }}</td>
+                                <td class="contas-mono">{{ u.username }}</td>
+                                <td>
+                                    <span class="contas-role" :class="`contas-role--${u.role}`">
+                                        {{ u.role === 'admin' ? 'Admin' : 'Usuário' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span v-if="u.mustChangePassword" class="contas-pending" title="Ainda não trocou a senha padrão">
+                                        padrão
+                                    </span>
+                                    <span v-else class="contas-muted">definida</span>
+                                </td>
+                                <td class="contas-actions">
+                                    <Button
+                                        text
+                                        size="small"
+                                        icon="pi pi-key"
+                                        title="Redefinir senha para o padrão"
+                                        @click="onResetPassword(u)"
+                                    />
+                                    <Button
+                                        text
+                                        size="small"
+                                        :icon="u.role === 'admin' ? 'pi pi-user-minus' : 'pi pi-user-plus'"
+                                        :title="u.role === 'admin' ? 'Tornar usuário' : 'Tornar admin'"
+                                        @click="onToggleRole(u)"
+                                    />
+                                    <Button
+                                        v-if="u.id !== currentUser?.id"
+                                        text
+                                        size="small"
+                                        severity="danger"
+                                        icon="pi pi-trash"
+                                        title="Excluir conta"
+                                        @click="onDelete(u)"
+                                    />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <Dialog
+                v-model:visible="createDialogVisible"
+                modal
+                append-to="body"
+                header="Cadastrar novo"
+                :style="{ width: 'min(420px, 96vw)' }"
+                :draggable="false"
+            >
+                <div class="contas-form">
+                    <label class="contas-field">
+                        <span>Nome</span>
+                        <InputText v-model="form.name" placeholder="Nome completo" />
+                    </label>
+                    <label class="contas-field">
+                        <span>Usuário</span>
+                        <InputText v-model="form.username" placeholder="ex.: joao (sem espaços)" />
+                    </label>
+                    <label class="contas-field">
+                        <span>E-mail (opcional)</span>
+                        <InputText v-model="form.email" placeholder="para reset por e-mail no futuro" />
+                    </label>
+                    <label class="contas-field">
+                        <span>Papel</span>
+                        <Select
+                            v-model="form.role"
+                            :options="roleOptions"
+                            option-label="label"
+                            option-value="value"
+                            append-to="body"
                         />
-                    </div>
-                </section>
-
-                <!-- Lista -->
-                <section class="contas-card contas-card--wide">
-                    <div class="contas-card__head">
-                        <h2 class="contas-card__title">Contas do time</h2>
-                        <Button text icon="pi pi-refresh" label="Atualizar" @click="refresh" />
-                    </div>
-
-                    <p v-if="feedback" class="contas-feedback">{{ feedback }}</p>
-                    <p v-if="loadError" class="contas-error">{{ loadError }}</p>
-                    <p v-if="loading" class="contas-muted">Carregando…</p>
-
-                    <div v-else class="contas-table-wrap">
-                        <table class="contas-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Usuário</th>
-                                    <th>Papel</th>
-                                    <th>Senha</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="u in users" :key="u.id">
-                                    <td>{{ u.name }}</td>
-                                    <td class="contas-mono">{{ u.username }}</td>
-                                    <td>
-                                        <span class="contas-role" :class="`contas-role--${u.role}`">
-                                            {{ u.role === 'admin' ? 'Admin' : 'Usuário' }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span v-if="u.mustChangePassword" class="contas-pending" title="Ainda não trocou a senha padrão">
-                                            padrão
-                                        </span>
-                                        <span v-else class="contas-muted">definida</span>
-                                    </td>
-                                    <td class="contas-actions">
-                                        <Button
-                                            text
-                                            size="small"
-                                            icon="pi pi-key"
-                                            title="Redefinir senha para o padrão"
-                                            @click="onResetPassword(u)"
-                                        />
-                                        <Button
-                                            text
-                                            size="small"
-                                            :icon="u.role === 'admin' ? 'pi pi-user-minus' : 'pi pi-user-plus'"
-                                            :title="u.role === 'admin' ? 'Tornar usuário' : 'Tornar admin'"
-                                            @click="onToggleRole(u)"
-                                        />
-                                        <Button
-                                            v-if="u.id !== currentUser?.id"
-                                            text
-                                            size="small"
-                                            severity="danger"
-                                            icon="pi pi-trash"
-                                            title="Excluir conta"
-                                            @click="onDelete(u)"
-                                        />
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
+                    </label>
+                    <p v-if="formError" class="contas-error">{{ formError }}</p>
+                    <Button
+                        label="Criar conta"
+                        icon="pi pi-user-plus"
+                        :loading="creating"
+                        @click="onCreate"
+                    />
+                </div>
+            </Dialog>
         </div>
     </VuePressLayout>
 </template>
 
 <style scoped>
-.contas-grid {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 20px;
-    align-items: start;
-}
-
-@media (max-width: 900px) {
-    .contas-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 .contas-card {
     background: var(--hub-surface);
     border: 1px solid var(--hub-line);
     border-radius: 14px;
     padding: 18px;
-}
-
-.contas-card__head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.contas-card__title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--hub-ink);
-    margin: 0 0 14px;
 }
 
 .contas-form {
@@ -290,32 +275,6 @@ onMounted(refresh);
 .contas-muted {
     color: var(--hub-muted);
     font-size: 13px;
-}
-
-.contas-table-wrap {
-    overflow-x: auto;
-}
-
-.contas-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.contas-table th {
-    text-align: left;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--hub-muted);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--hub-line);
-}
-
-.contas-table td {
-    padding: 10px;
-    border-bottom: 1px solid var(--hub-line);
-    color: var(--hub-ink);
 }
 
 .contas-mono {

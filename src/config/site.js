@@ -6,6 +6,14 @@ import { COMMERCIAL_PIPELINE_PATH, COMMERCIAL_DASHBOARD_PATH, COMMERCIAL_CALENDA
 export const siteTitle = 'Product Hub';
 export const siteDescription = 'Roadmaps SaaS, Interno e BPO — estratégia Aleevia';
 
+/** Dashboard comercial fica acima de tudo, aberto pra todo mundo (não só admin). */
+export const dashboardNavItem = {
+    text: 'Dashboard comercial',
+    link: COMMERCIAL_DASHBOARD_PATH,
+    match: /^\/comercial\/dashboard/,
+    icon: 'pi pi-chart-pie'
+};
+
 /** Início fica solto no topo do menu, fora dos grupos Produto/Comercial. */
 export const homeNavItem = { text: 'Início', link: '/', match: /^\/$/, icon: 'pi pi-home' };
 
@@ -32,12 +40,6 @@ export const navGroups = [
                 icon: type.icon
             })),
             {
-                text: 'Métricas',
-                link: '/configuracoes/metricas',
-                match: /^\/configuracoes\/metricas$/,
-                icon: 'pi pi-chart-bar'
-            },
-            {
                 text: 'Contas',
                 link: '/configuracoes/contas',
                 match: /^\/configuracoes\/contas$/,
@@ -59,26 +61,22 @@ export const navGroups = [
                 text: 'Pipeline',
                 link: COMMERCIAL_PIPELINE_PATH,
                 match: /^\/comercial\/pipeline/,
-                icon: 'pi pi-filter'
-            },
-            {
-                text: 'Dashboard',
-                link: COMMERCIAL_DASHBOARD_PATH,
-                match: /^\/comercial\/dashboard/,
-                icon: 'pi pi-chart-pie'
+                icon: 'pi pi-filter',
+                adminOnly: true
             },
             {
                 text: 'Calendário',
                 link: COMMERCIAL_CALENDAR_PATH,
                 match: /^\/comercial\/calendario/,
-                icon: 'pi pi-calendar'
+                icon: 'pi pi-calendar',
+                adminOnly: true
             }
         ]
     }
 ];
 
 /** Navegação global achatada — mantida para quem só precisa da lista de links. */
-export const nav = [homeNavItem, ...navGroups.flatMap((group) => group.items)];
+export const nav = [dashboardNavItem, homeNavItem, ...navGroups.flatMap((group) => group.items)];
 
 const devStatusGroup = (type) => ({
     text: 'Status',

@@ -20,17 +20,12 @@ const kinds = ONBOARDING_KINDS;
 const projects = ONBOARDING_PROJECTS;
 
 const EDITABLE_FIELDS = [
-    'fantasia', 'razaoSocial', 'kind', 'classificacao', 'grupoEcon', 'pfPj', 'divulgacao', 'natNd',
-    'telefone', 'ddd', 'email', 'endereco', 'numEndereco', 'complemento', 'bairro', 'municipio', 'uf', 'cep',
+    'fantasia', 'razaoSocial', 'kind', 'cnpj', 'cpf', 'classificacao', 'grupoEcon', 'natNd',
+    'contactName', 'telefone', 'ddd', 'email', 'endereco', 'numEndereco', 'complemento', 'bairro', 'municipio', 'uf', 'cep',
     'observacao'
 ];
 
 const CLASSIFICACAO_OPTIONS = ['DIAGNOSTICA', 'TERAPEUTICA', 'CLINICA', 'PRONTO SOCORRO', 'HOSPITAL', 'HOSPITAL DIA', 'ANESTESIA'];
-const DIVULGACAO_OPTIONS = ['DIVULGADO', 'NAO DIVULGADO'];
-const PF_PJ_OPTIONS = [
-    { label: 'Pessoa jurídica', value: 'J' },
-    { label: 'Pessoa física', value: 'F' }
-];
 
 const draft = reactive({});
 const projectsDraft = ref([]);
@@ -165,11 +160,12 @@ async function saveChanges() {
         </div>
 
         <div class="com-section">
-            <p class="com-section__title">Estabelecimento</p>
+            <p class="com-section__title"><i class="pi pi-building" /> Dados Corporativos</p>
             <div class="com-field-row">
-                <div class="com-field"><label>Nome fantasia</label><InputText v-model="draft.fantasia" /></div>
                 <div class="com-field"><label>Razão social</label><InputText v-model="draft.razaoSocial" /></div>
+                <div class="com-field"><label>Nome fantasia</label><InputText v-model="draft.fantasia" /></div>
             </div>
+            <div class="com-field"><label>CNPJ</label><InputText v-model="draft.cnpj" placeholder="sem CNPJ" /></div>
             <div class="com-field-row">
                 <div class="com-field" style="flex: 0 0 auto">
                     <label>Tipo</label>
@@ -204,24 +200,24 @@ async function saveChanges() {
                     </div>
                 </div>
             </div>
-            <div class="com-field-row">
-                <div class="com-field"><label>CNPJ / CPF</label><InputText :model-value="establishment.cnpjCpf || 'sem CNPJ'" disabled /></div>
-                <div class="com-field">
-                    <label>PF / PJ</label>
-                    <Select v-model="draft.pfPj" :options="PF_PJ_OPTIONS" option-label="label" option-value="value" append-to="body" />
-                </div>
-            </div>
-            <div class="com-field-row">
-                <div class="com-field">
-                    <label>Classificação</label>
-                    <Select v-model="draft.classificacao" :options="CLASSIFICACAO_OPTIONS" append-to="body" />
-                </div>
-                <div class="com-field">
-                    <label>Divulgação</label>
-                    <Select v-model="draft.divulgacao" :options="DIVULGACAO_OPTIONS" append-to="body" />
-                </div>
+            <div class="com-field">
+                <label>Classificação</label>
+                <Select v-model="draft.classificacao" :options="CLASSIFICACAO_OPTIONS" append-to="body" />
             </div>
             <div class="com-field"><label>Grupo econômico</label><InputText v-model="draft.grupoEcon" /></div>
+        </div>
+
+        <div class="com-section">
+            <p class="com-section__title"><i class="pi pi-user" /> Responsável Legal</p>
+            <div class="com-field-row">
+                <div class="com-field"><label>Nome</label><InputText v-model="draft.contactName" placeholder="Pessoa de contato" /></div>
+                <div class="com-field"><label>CPF</label><InputText v-model="draft.cpf" placeholder="sem CPF" /></div>
+            </div>
+            <div class="com-field-row">
+                <div class="com-field"><label>E-mail</label><InputText v-model="draft.email" /></div>
+                <div class="com-field" style="flex: 0 0 90px"><label>DDD</label><InputText v-model="draft.ddd" /></div>
+                <div class="com-field"><label>Telefone</label><InputText v-model="draft.telefone" /></div>
+            </div>
         </div>
 
         <div class="com-section">
@@ -247,15 +243,6 @@ async function saveChanges() {
                     @item-select="addEspecialidade"
                     @keyup.enter="addEspecialidade"
                 />
-            </div>
-        </div>
-
-        <div class="com-section">
-            <p class="com-section__title">Contato</p>
-            <div class="com-field-row">
-                <div class="com-field" style="flex: 0 0 90px"><label>DDD</label><InputText v-model="draft.ddd" /></div>
-                <div class="com-field"><label>Telefone</label><InputText v-model="draft.telefone" /></div>
-                <div class="com-field"><label>E-mail</label><InputText v-model="draft.email" /></div>
             </div>
         </div>
 

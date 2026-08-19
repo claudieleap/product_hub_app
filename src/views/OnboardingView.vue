@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import OnboardingCardDialog from '@/components/OnboardingCardDialog.vue';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
-import { getKindMeta, getProjectMeta, getPersonMeta } from '@/config/onboardingConfig';
+import { getKindMeta, getProjectMeta, getPersonMeta, responsavelNames } from '@/config/onboardingConfig';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import '@/assets/onboarding.css';
 
@@ -253,8 +253,8 @@ function progressOf(card) {
                                     <span>
                                         <i class="pi pi-calendar" />
                                         {{ card.nextAppointment.date }} · {{ card.nextAppointment.time }}
-                                        <template v-if="getPersonMeta(card.nextAppointment.responsavelId)">
-                                            · {{ getPersonMeta(card.nextAppointment.responsavelId).name }}
+                                        <template v-if="responsavelNames(card.nextAppointment.responsavelIds)">
+                                            · {{ responsavelNames(card.nextAppointment.responsavelIds) }}
                                         </template>
                                     </span>
                                 </div>

@@ -56,6 +56,11 @@ export function getPersonMeta(id) {
     return ONBOARDING_PEOPLE.find((person) => person.id === id) ?? null;
 }
 
+/** Nomes dos responsáveis de um agendamento (array de ids), prontos pra exibir. */
+export function responsavelNames(ids) {
+    return (ids ?? []).map((id) => getPersonMeta(id)?.name).filter(Boolean).join(', ');
+}
+
 /** Fases padrão do board — o usuário pode renomear, reordenar e criar novas. */
 export const DEFAULT_ONBOARDING_PHASES = [
     { id: 'backlog', title: 'Backlog', hint: 'A implantar' },

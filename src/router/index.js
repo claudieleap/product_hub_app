@@ -76,7 +76,7 @@ const router = createRouter({
             path: '/comercial/pipeline',
             name: 'commercial-pipeline',
             component: CommercialPipelineView,
-            meta: { title: 'Pipeline comercial' }
+            meta: { title: 'Pipeline comercial', admin: true }
         },
         {
             path: '/comercial/dashboard',
@@ -88,7 +88,7 @@ const router = createRouter({
             path: '/comercial/calendario',
             name: 'commercial-calendar',
             component: CalendarView,
-            meta: { title: 'Calendário' }
+            meta: { title: 'Calendário', admin: true }
         },
         {
             path: '/configuracoes/metricas',

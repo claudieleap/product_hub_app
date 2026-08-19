@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useEstablishments } from '@/composables/useEstablishments';
+import { establishmentsApi } from '@/api/establishmentsClient';
 import { ONBOARDING_PEOPLE } from '@/config/onboardingConfig';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import '@/assets/commercial.css';
@@ -9,12 +10,16 @@ import '@/assets/onboarding.css';
 const visible = defineModel('visible', { type: Boolean, default: false });
 
 const props = defineProps({
-    defaultDate: { type: String, default: '' }
+    defaultDate: { type: String, default: '' },
+    /** Quando setado, o dialog abre em modo edição carregando os dados desse agendamento. */
+    appointment: { type: Object, default: null }
 });
 
-const emit = defineEmits(['created']);
+const emit = defineEmits(['created', 'updated']);
 
 const { establishments, createAppointment } = useEstablishments();
+
+const isEditing = computed(() => Boolean(props.appointment));
 
 const establishmentQuery = ref('');
 const establishmentSuggestions = ref([]);
@@ -24,7 +29,7 @@ const time = ref('09:00');
 const modality = ref('presencial');
 const location = ref('');
 const paymentLink = ref('');
-const responsavelId = ref(null);
+const responsavelIds = ref([]);
 const saving = ref(false);
 const error = ref(null);
 
@@ -34,17 +39,39 @@ const MODALITIES = [
     { id: 'online', label: 'Online', icon: 'pi pi-video' }
 ];
 
+function personName(id) {
+    return people.find((p) => p.id === id)?.name ?? id;
+}
+
 watch(visible, (open) => {
     if (!open) return;
+    error.value = null;
+
+    if (props.appointment) {
+        const appt = props.appointment;
+        selectedEstablishment.value = establishments.value.find((e) => e.id === appt.establishmentId) ?? {
+            id: appt.establishmentId,
+            fantasia: appt.establishmentName,
+            razaoSocial: appt.establishmentName
+        };
+        establishmentQuery.value = appt.establishmentName || '';
+        date.value = appt.date || '';
+        time.value = appt.time || '09:00';
+        modality.value = appt.modality || 'presencial';
+        location.value = appt.location || '';
+        paymentLink.value = appt.paymentLink || '';
+        responsavelIds.value = [...(appt.responsavelIds ?? [])];
+        return;
+    }
+
     date.value = props.defaultDate || new Date().toISOString().slice(0, 10);
     time.value = '09:00';
     modality.value = 'presencial';
     location.value = '';
     paymentLink.value = '';
-    responsavelId.value = null;
+    responsavelIds.value = [];
     selectedEstablishment.value = null;
     establishmentQuery.value = '';
-    error.value = null;
 });
 
 function searchEstablishments(event) {
@@ -61,30 +88,33 @@ function selectEstablishment(event) {
     selectedEstablishment.value = event.value;
 }
 
-const canSubmit = computed(() => {
-    if (!selectedEstablishment.value?.id || !date.value || !time.value) return false;
-    if (modality.value === 'presencial') return Boolean(location.value.trim());
-    return Boolean(paymentLink.value.trim());
-});
+const canSubmit = computed(() => Boolean(selectedEstablishment.value?.id && date.value && time.value));
 
 async function submit() {
     if (!canSubmit.value) return;
     saving.value = true;
     error.value = null;
 
+    const payload = {
+        date: date.value,
+        time: time.value,
+        modality: modality.value,
+        location: modality.value === 'presencial' ? location.value.trim() : null,
+        paymentLink: modality.value === 'online' ? paymentLink.value.trim() : null,
+        responsavelIds: responsavelIds.value
+    };
+
     try {
-        await createAppointment(selectedEstablishment.value.id, {
-            date: date.value,
-            time: time.value,
-            modality: modality.value,
-            location: modality.value === 'presencial' ? location.value.trim() : null,
-            paymentLink: modality.value === 'online' ? paymentLink.value.trim() : null,
-            responsavelId: responsavelId.value
-        });
-        emit('created');
+        if (isEditing.value) {
+            await establishmentsApi.updateAppointment(selectedEstablishment.value.id, props.appointment.id, payload);
+            emit('updated');
+        } else {
+            await createAppointment(selectedEstablishment.value.id, payload);
+            emit('created');
+        }
         visible.value = false;
     } catch (err) {
-        error.value = err.message || 'Não foi possível criar o agendamento.';
+        error.value = err.message || 'Não foi possível salvar o agendamento.';
     } finally {
         saving.value = false;
     }
@@ -97,13 +127,14 @@ async function submit() {
         modal
         append-to="body"
         class="com-dialog"
-        header="Novo agendamento"
+        :header="isEditing ? 'Editar agendamento' : 'Novo agendamento'"
         :style="{ width: 'min(480px, 96vw)' }"
         :draggable="false"
     >
         <div class="com-field" style="margin-bottom: 14px">
             <label>Estabelecimento</label>
             <AutoComplete
+                v-if="!isEditing"
                 v-model="establishmentQuery"
                 :suggestions="establishmentSuggestions"
                 option-label="fantasia"
@@ -120,6 +151,9 @@ async function submit() {
                     <span v-if="slotProps.option.municipio" style="color: var(--hub-muted); font-size: 12px"> · {{ slotProps.option.municipio }}</span>
                 </template>
             </AutoComplete>
+            <p v-else style="margin: 0; font-weight: 700; font-size: 14px">
+                {{ selectedEstablishment?.fantasia || selectedEstablishment?.razaoSocial }}
+            </p>
         </div>
 
         <div class="com-field-row">
@@ -160,23 +194,27 @@ async function submit() {
         </div>
 
         <div class="com-field" style="max-width: 340px">
-            <label>Responsável</label>
-            <Select
-                v-model="responsavelId"
+            <label>Responsáveis</label>
+            <MultiSelect
+                v-model="responsavelIds"
                 :options="people"
                 option-label="name"
                 option-value="id"
-                show-clear
+                display="chip"
                 placeholder="Sem responsável"
                 append-to="body"
                 class="w-full"
             >
-                <template #value="slotProps">
-                    <span v-if="slotProps.value" class="onb-person">
-                        <OnboardingAvatar :avatar="people.find((p) => p.id === slotProps.value)?.avatar" :size="22" />
-                        {{ people.find((p) => p.id === slotProps.value)?.name }}
+                <template #chip="slotProps">
+                    <span class="onb-person" style="gap: 4px">
+                        <OnboardingAvatar :avatar="people.find((p) => p.id === slotProps.value)?.avatar" :size="18" />
+                        {{ personName(slotProps.value) }}
+                        <i
+                            class="pi pi-times-circle"
+                            style="cursor: pointer; font-size: 12px"
+                            @click.stop="slotProps.removeCallback($event, slotProps.value)"
+                        />
                     </span>
-                    <span v-else class="onb-person onb-person--empty">Sem responsável</span>
                 </template>
                 <template #option="slotProps">
                     <span class="onb-person">
@@ -184,11 +222,11 @@ async function submit() {
                         {{ slotProps.option.name }}
                     </span>
                 </template>
-            </Select>
+            </MultiSelect>
         </div>
 
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 18px">
-            <Button type="button" label="Agendar" :loading="saving" :disabled="!canSubmit" @click="submit" />
+            <Button type="button" :label="isEditing ? 'Salvar alterações' : 'Agendar'" :loading="saving" :disabled="!canSubmit" @click="submit" />
             <span v-if="error" style="font-size: 12px; color: var(--hub-coral, #cf4a3e)">{{ error }}</span>
         </div>
     </Dialog>

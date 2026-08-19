@@ -225,7 +225,7 @@ function addCard({ phaseId, name = 'Novo estabelecimento', kind = 'clinica' } = 
     state.cards.push(card);
 
     establishmentsApi
-        .create({ id: card.id, fantasia: name, kind, onboardingPhaseId: targetPhase, onboardingOrderIndex: order })
+        .create({ id: card.id, razaoSocial: name, fantasia: name, kind, onboardingPhaseId: targetPhase, onboardingOrderIndex: order })
         .then((created) => {
             sharedEstablishments.establishments.value.push({ ...created, especialidades: [], projects: created.projects ?? [] });
         })

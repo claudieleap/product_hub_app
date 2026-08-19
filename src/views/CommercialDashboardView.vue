@@ -1,22 +1,66 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useEstablishments } from '@/composables/useEstablishments';
+import { establishmentsApi } from '@/api/establishmentsClient';
 import { COMMERCIAL_STAGES } from '@/config/commercialConfig';
 import '@/assets/commercial.css';
 
-const { pipelineEstablishments, isHydrated, loadError, cities, specialties, countByStage } = useEstablishments();
+const { pipelineEstablishments, isHydrated, loadError } = useEstablishments();
 
-const totalEstabelecimentos = computed(() => pipelineEstablishments.value.length);
+/* ---------- Filtro de data (última atualização do card) — default: tudo ---------- */
+
+const dateFrom = ref('');
+const dateTo = ref('');
+
+const isDateFiltered = computed(() => Boolean(dateFrom.value || dateTo.value));
+
+function clearDateFilter() {
+    dateFrom.value = '';
+    dateTo.value = '';
+}
+
+/** updatedAt vem em UTC — compara pela data local do navegador, igual ao <input type="date">. */
+function toLocalDateStr(iso) {
+    const d = new Date(iso);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+const filteredEstablishments = computed(() => {
+    if (!isDateFiltered.value) return pipelineEstablishments.value;
+
+    return pipelineEstablishments.value.filter((item) => {
+        if (!item.updatedAt) return false;
+        const updated = toLocalDateStr(item.updatedAt);
+        if (dateFrom.value && updated < dateFrom.value) return false;
+        if (dateTo.value && updated > dateTo.value) return false;
+        return true;
+    });
+});
+
+const totalEstabelecimentos = computed(() => filteredEstablishments.value.length);
+
+const filteredCities = computed(() =>
+    [...new Set(filteredEstablishments.value.map((item) => item.municipio).filter(Boolean))]
+);
+
+const filteredSpecialties = computed(() =>
+    [...new Set(filteredEstablishments.value.flatMap((item) => item.especialidades))]
+);
 
 /* ---------- Estabelecimentos por etapa do funil (ranking ordinal) ---------- */
+
+function countByStageFiltered(stageId) {
+    return filteredEstablishments.value.filter((item) => item.stageId === stageId).length;
+}
 
 const stageCounts = computed(() =>
     COMMERCIAL_STAGES.map((stage, index) => ({
         id: stage.id,
         title: stage.title,
-        count: countByStage(stage.id),
+        count: countByStageFiltered(stage.id),
         opacity: 0.45 + (index / (COMMERCIAL_STAGES.length - 1)) * 0.55
     }))
 );
@@ -32,7 +76,7 @@ function stageTooltip(stage) {
 
 const especialidadeCounts = computed(() => {
     const counts = new Map();
-    for (const lead of pipelineEstablishments.value) {
+    for (const lead of filteredEstablishments.value) {
         for (const esp of lead.especialidades) {
             counts.set(esp, (counts.get(esp) ?? 0) + 1);
         }
@@ -52,7 +96,7 @@ function especialidadeTooltip([esp, count]) {
 
 const cidadeCounts = computed(() => {
     const counts = new Map();
-    for (const lead of pipelineEstablishments.value) {
+    for (const lead of filteredEstablishments.value) {
         if (!lead.municipio) continue;
         counts.set(lead.municipio, (counts.get(lead.municipio) ?? 0) + 1);
     }
@@ -65,6 +109,32 @@ function cidadeTooltip([cidade, count]) {
     const pct = totalEstabelecimentos.value ? ((count / totalEstabelecimentos.value) * 100).toFixed(1) : '0';
     return `${cidade}: ${count} estabelecimentos (${pct}% do total)`;
 }
+
+/* ---------- Agendamentos vs Convertido/Perdido (comparação categórica) ---------- */
+
+const allAppointments = ref([]);
+const appointmentsError = ref(null);
+
+onMounted(async () => {
+    try {
+        allAppointments.value = await establishmentsApi.listAppointments('2000-01-01', '2100-12-31');
+    } catch (error) {
+        appointmentsError.value = error.message || 'Não foi possível carregar os agendamentos.';
+    }
+});
+
+const totalAgendamentos = computed(() => {
+    const ids = new Set(filteredEstablishments.value.map((item) => item.id));
+    return allAppointments.value.filter((appt) => ids.has(appt.establishmentId)).length;
+});
+
+const conversionComparison = computed(() => [
+    { id: 'agendamentos', label: 'Agendamentos', count: totalAgendamentos.value, hue: 'var(--hub-blue)' },
+    { id: 'convertido', label: 'Convertido', count: countByStageFiltered('onboardado_fremium'), hue: 'var(--hub-green)' },
+    { id: 'perdido', label: 'Perdido', count: countByStageFiltered('levantada_mao'), hue: 'var(--hub-coral)' }
+]);
+
+const maxConversionCount = computed(() => Math.max(1, ...conversionComparison.value.map((c) => c.count)));
 
 /* ---------- Composição por classificação (donut, paleta categórica) ---------- */
 
@@ -79,7 +149,7 @@ const CLASSIFICACAO_GROUPS = [
 const classificacaoBreakdown = computed(() => {
     const counts = new Map(CLASSIFICACAO_GROUPS.map((group) => [group.key, 0]));
 
-    for (const lead of pipelineEstablishments.value) {
+    for (const lead of filteredEstablishments.value) {
         const key = counts.has(lead.classificacao) ? lead.classificacao : '__outros';
         counts.set(key, counts.get(key) + 1);
     }
@@ -122,17 +192,38 @@ const donutSegments = computed(() => {
             <p v-if="!isHydrated" class="roadmap-sync-warning">Carregando dados...</p>
 
             <template v-if="isHydrated">
+                <div class="com-filters">
+                    <div class="com-field" style="flex: 0 0 auto">
+                        <label style="font-size: 11px; color: var(--hub-muted)">Atualizado de</label>
+                        <InputText v-model="dateFrom" type="date" />
+                    </div>
+                    <div class="com-field" style="flex: 0 0 auto">
+                        <label style="font-size: 11px; color: var(--hub-muted)">até</label>
+                        <InputText v-model="dateTo" type="date" />
+                    </div>
+                    <Button
+                        v-if="isDateFiltered"
+                        type="button"
+                        text
+                        size="small"
+                        icon="pi pi-times"
+                        label="Limpar filtro (ver tudo)"
+                        @click="clearDateFilter"
+                    />
+                    <span v-else class="com-filters__count">Mostrando todos os dados</span>
+                </div>
+
                 <div class="com-dash-stats">
                     <div class="com-dash-stat">
                         <div class="com-dash-stat__value">{{ totalEstabelecimentos }}</div>
                         <div class="com-dash-stat__label">Estabelecimentos</div>
                     </div>
                     <div class="com-dash-stat">
-                        <div class="com-dash-stat__value">{{ cities.length }}</div>
+                        <div class="com-dash-stat__value">{{ filteredCities.length }}</div>
                         <div class="com-dash-stat__label">Cidades (Vale do Paraíba)</div>
                     </div>
                     <div class="com-dash-stat">
-                        <div class="com-dash-stat__value">{{ specialties.length }}</div>
+                        <div class="com-dash-stat__value">{{ filteredSpecialties.length }}</div>
                         <div class="com-dash-stat__label">Especialidades</div>
                     </div>
                 </div>
@@ -197,6 +288,27 @@ const donutSegments = computed(() => {
                                 />
                             </span>
                             <span class="com-bar-row__value">{{ entry[1] }}</span>
+                        </div>
+                    </div>
+
+                    <div class="com-dash-panel">
+                        <h2 class="com-dash-panel__title">Agendamentos vs. Convertido/Perdido</h2>
+                        <p class="com-dash-panel__subtitle">Quantas reuniões viraram conversão ou perda</p>
+                        <p v-if="appointmentsError" class="roadmap-sync-warning">{{ appointmentsError }}</p>
+                        <div
+                            v-for="entry in conversionComparison"
+                            :key="entry.id"
+                            class="com-bar-row"
+                            :title="`${entry.label}: ${entry.count}`"
+                        >
+                            <span class="com-bar-row__label">{{ entry.label }}</span>
+                            <span class="com-bar-row__track">
+                                <span
+                                    class="com-bar-row__fill"
+                                    :style="{ width: `${(entry.count / maxConversionCount) * 100}%`, '--com-bar-hue': entry.hue }"
+                                />
+                            </span>
+                            <span class="com-bar-row__value">{{ entry.count }}</span>
                         </div>
                     </div>
 

@@ -65,7 +65,7 @@ function formatCommentDate(iso) {
 <template>
     <template v-if="establishment">
         <div class="com-field">
-            <Textarea v-model="commentText" rows="2" :placeholder="`Comentando como ${user?.name ?? 'você'}...`" />
+            <Textarea v-model="commentText" rows="4" :placeholder="`Comentando como ${user?.name ?? 'você'}...`" />
             <div style="display: flex; align-items: center; gap: 10px">
                 <Button
                     type="button"

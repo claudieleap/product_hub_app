@@ -211,6 +211,16 @@
     color: var(--hub-muted);
 }
 
+.com-tag--kind {
+    background: var(--hub-blue-wash);
+    color: var(--hub-blue);
+}
+
+.com-tag--kind-hospital {
+    background: var(--hub-moat-wash);
+    color: var(--hub-moat);
+}
+
 .com-card__meta {
     display: flex;
     flex-direction: column;
@@ -241,6 +251,34 @@
     margin-top: 1px;
 }
 
+/* ---------- Tabela genérica (histórico de agendamentos, etc.) ---------- */
+
+.com-table-wrap {
+    overflow-x: auto;
+}
+
+.com-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.com-table th {
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--hub-muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--hub-line);
+}
+
+.com-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--hub-line);
+    color: var(--hub-ink);
+}
+
 /* ---------- Dialog ---------- */
 
 .com-dialog {
@@ -267,6 +305,9 @@
 }
 
 .com-section__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
@@ -544,6 +585,22 @@
 .com-calendar__appointment--more {
     color: var(--hub-muted);
     background: var(--hub-bg);
+}
+
+.com-calendar__appointment:hover {
+    filter: brightness(0.96);
+}
+
+/* ---------- Semana: coluna única mais alta, sem truncar os horários ---------- */
+
+.com-calendar--week .com-calendar__day {
+    min-height: 220px;
+    align-items: stretch;
+}
+
+.com-calendar--week .com-calendar__appointment {
+    white-space: normal;
+    text-overflow: clip;
 }
 
 /* ---------- Dashboard ---------- */

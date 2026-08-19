@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { homeNavItem, isNavActive, navGroups, resolveSidebar } from '@/config/site';
+import { dashboardNavItem, homeNavItem, isNavActive, navGroups, resolveSidebar } from '@/config/site';
 import { parseRoadmapTypeFromPath, roadmapMatrixPath } from '@/config/roadmapTypes';
 import { useRoadmapProducts } from '@/composables/useRoadmapProducts';
 import { useAuth } from '@/composables/useAuth';
@@ -159,6 +159,17 @@ onUnmounted(() => {
             </div>
 
             <nav class="vp-aside__nav" aria-label="Seções">
+                <router-link
+                    :to="dashboardNavItem.link"
+                    class="vp-aside__nav-link"
+                    :class="{ active: isNavActive(dashboardNavItem, route.path) }"
+                    :title="dashboardNavItem.text"
+                    @click="closeMobileMenu"
+                >
+                    <RoadmapTypeIcon :icon="dashboardNavItem.icon" class="vp-aside__nav-icon" aria-hidden="true" />
+                    <span class="vp-aside__nav-label">{{ dashboardNavItem.text }}</span>
+                </router-link>
+
                 <router-link
                     :to="homeNavItem.link"
                     class="vp-aside__nav-link"

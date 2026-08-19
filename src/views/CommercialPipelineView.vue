@@ -73,10 +73,14 @@ function extraTagsCount(lead) {
     return Math.max(lead.especialidades.length - 2, 0);
 }
 
+function responsavelNames(ids) {
+    return (ids ?? []).map((id) => getPersonMeta(id)?.name).filter(Boolean).join(', ');
+}
+
 async function handleNewLead() {
     creating.value = true;
     try {
-        const created = await createEstablishment({ fantasia: 'Novo lead', stageId: 'inbox', orderIndex: 0 });
+        const created = await createEstablishment({ razaoSocial: 'Novo lead', stageId: 'inbox', orderIndex: 0 });
         openLead(created.id);
     } catch (error) {
         dragError.value = error.message || 'Não foi possível criar o lead.';
@@ -211,7 +215,7 @@ async function handleImportFile(event) {
                                 <h3 class="com-card__name">{{ lead.fantasia || lead.razaoSocial }}</h3>
 
                                 <div class="com-card__tags">
-                                    <span class="com-tag">
+                                    <span class="com-tag com-tag--kind" :class="{ 'com-tag--kind-hospital': lead.kind === 'hospital' }">
                                         <i :class="getKindMeta(lead.kind).icon" /> {{ getKindMeta(lead.kind).label }}
                                     </span>
                                     <span v-for="projectId in lead.projects" :key="projectId" class="com-tag">
@@ -227,8 +231,8 @@ async function handleImportFile(event) {
                                     <span v-if="lead.nextAppointment">
                                         <i class="pi pi-calendar" />
                                         {{ lead.nextAppointment.date }} · {{ lead.nextAppointment.time }}
-                                        <template v-if="getPersonMeta(lead.nextAppointment.responsavelId)">
-                                            · {{ getPersonMeta(lead.nextAppointment.responsavelId).name }}
+                                        <template v-if="responsavelNames(lead.nextAppointment.responsavelIds)">
+                                            · {{ responsavelNames(lead.nextAppointment.responsavelIds) }}
                                         </template>
                                     </span>
                                 </div>

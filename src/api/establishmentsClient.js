@@ -71,6 +71,8 @@ export const establishmentsApi = {
 
     listAppointments: (start, end) => request('GET', `/establishments/appointments?start=${start}&end=${end}`),
     createAppointment: (establishmentId, payload) => request('POST', `/establishments/${encodeURIComponent(establishmentId)}/appointments`, payload),
+    updateAppointment: (establishmentId, appointmentId, payload) =>
+        request('PUT', `/establishments/${encodeURIComponent(establishmentId)}/appointments/${encodeURIComponent(appointmentId)}`, payload),
 
     async import(file) {
         const response = await fetch(`${baseUrl}/establishments/import`, {

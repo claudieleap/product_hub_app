@@ -12,7 +12,9 @@ const visible = defineModel('visible', { type: Boolean, default: false });
 const props = defineProps({
     defaultDate: { type: String, default: '' },
     /** Quando setado, o dialog abre em modo edição carregando os dados desse agendamento. */
-    appointment: { type: Object, default: null }
+    appointment: { type: Object, default: null },
+    /** Pré-seleciona o estabelecimento (ex.: aberto de dentro do card dele) e esconde a busca. */
+    establishmentId: { type: String, default: '' }
 });
 
 const emit = defineEmits(['created', 'updated', 'deleted']);
@@ -71,7 +73,9 @@ watch(visible, (open) => {
     location.value = '';
     paymentLink.value = '';
     responsavelIds.value = [];
-    selectedEstablishment.value = null;
+
+    const preselected = props.establishmentId ? establishments.value.find((e) => e.id === props.establishmentId) : null;
+    selectedEstablishment.value = preselected ?? null;
     establishmentQuery.value = '';
 });
 
@@ -153,7 +157,7 @@ async function remove() {
         <div class="com-field" style="margin-bottom: 14px">
             <label>Estabelecimento</label>
             <AutoComplete
-                v-if="!isEditing"
+                v-if="!isEditing && !establishmentId"
                 v-model="establishmentQuery"
                 :suggestions="establishmentSuggestions"
                 option-label="fantasia"
@@ -171,7 +175,7 @@ async function remove() {
                 </template>
             </AutoComplete>
             <p v-else style="margin: 0; font-weight: 700; font-size: 14px">
-                {{ selectedEstablishment?.fantasia || selectedEstablishment?.razaoSocial }}
+                {{ selectedEstablishment?.fantasia || selectedEstablishment?.razaoSocial || 'Carregando...' }}
             </p>
         </div>
 

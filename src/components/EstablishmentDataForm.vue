@@ -70,6 +70,9 @@ const isDirty = computed(() => {
     return fieldsChanged || especialidadesChanged || projectsChanged;
 });
 
+/** Salvar não depende de ter alterado algo — só de ter um nome pra identificar o registro. */
+const canSave = computed(() => Boolean((draft.fantasia || '').trim()));
+
 function addEspecialidade() {
     const value = novaEspecialidade.value.trim().toUpperCase();
     if (!value || especialidadesDraft.value.includes(value)) return;
@@ -132,7 +135,7 @@ async function saveChanges() {
     }
 }
 
-defineExpose({ isDirty, saving, saveError, saveChanges });
+defineExpose({ isDirty, canSave, saving, saveError, saveChanges });
 </script>
 
 <template>
@@ -266,7 +269,7 @@ defineExpose({ isDirty, saving, saveError, saveChanges });
         </div>
 
         <div v-if="!hideSaveButton" style="display: flex; align-items: center; gap: 10px; position: sticky; bottom: 0; background: var(--hub-surface); padding-top: 8px">
-            <Button type="button" label="Salvar alterações" :loading="saving" :disabled="!isDirty" @click="saveChanges" />
+            <Button type="button" label="Salvar alterações" :loading="saving" :disabled="!canSave" @click="saveChanges" />
             <span v-if="saveError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e)">{{ saveError }}</span>
             <span v-else-if="isDirty" style="font-size: 12px; color: var(--hub-muted)">Alterações não salvas</span>
         </div>

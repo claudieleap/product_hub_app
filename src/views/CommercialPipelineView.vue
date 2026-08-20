@@ -5,6 +5,7 @@ import PageHeader from '@/components/PageHeader.vue';
 import CommercialLeadDialog from '@/components/CommercialLeadDialog.vue';
 import { useEstablishments } from '@/composables/useEstablishments';
 import { useOnboardingPhases } from '@/composables/useOnboardingPhases';
+import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
 import { useAuth } from '@/composables/useAuth';
 import { establishmentsApi } from '@/api/establishmentsClient';
@@ -12,9 +13,10 @@ import { COMMERCIAL_STAGES } from '@/config/commercialConfig';
 import { getKindMeta, getProjectMeta, getPersonMeta } from '@/config/onboardingConfig';
 import '@/assets/commercial.css';
 
-const { establishments, pipelineEstablishments, isHydrated, loadError, cities, specialties, moveToStage, updateFields, createEstablishment } =
+const { establishments, pipelineEstablishments, isHydrated, loadError, cities, specialties, moveToStage, createEstablishment } =
     useEstablishments();
 const { phases: onboardingPhases } = useOnboardingPhases();
+const { sendExistingToOnboarding } = useOnboardingBoard();
 const { isAdmin } = useAuth();
 
 const cityFilter = ref([]);
@@ -90,9 +92,10 @@ async function handleNewLead() {
 }
 
 async function sendToOnboarding(lead) {
-    const phaseId = onboardingPhases.value[0]?.id ?? 'backlog';
+    const backlogPhase = onboardingPhases.value.find((phase) => phase.title?.trim().toUpperCase() === 'BACKLOG');
+    const phaseId = backlogPhase?.id ?? onboardingPhases.value[0]?.id ?? 'backlog';
     try {
-        await updateFields(lead.id, { onboardingPhaseId: phaseId, onboardingOrderIndex: 0 });
+        await sendExistingToOnboarding(lead.id, phaseId);
     } catch (error) {
         dragError.value = error.message || 'Não foi possível enviar para o onboarding.';
     }

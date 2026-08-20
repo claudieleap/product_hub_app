@@ -4,6 +4,7 @@ import { useEstablishments } from '@/composables/useEstablishments';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
+import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
 import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
@@ -68,7 +69,7 @@ async function confirmDelete() {
         append-to="body"
         class="com-dialog"
         :header="establishment?.fantasia || establishment?.razaoSocial || 'Estabelecimento'"
-        :style="{ width: 'min(760px, 96vw)' }"
+        :style="{ width: 'min(960px, 96vw)' }"
         :content-style="{ maxHeight: '78vh' }"
         :draggable="false"
     >
@@ -83,12 +84,16 @@ async function confirmDelete() {
         <Tabs v-model:value="activeTab">
             <TabList>
                 <Tab value="dados">Dados</Tab>
+                <Tab value="onboarding">Onboarding</Tab>
                 <Tab value="agendamentos">Agendamentos</Tab>
                 <Tab value="comentarios">Comentários</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="dados">
                     <EstablishmentDataForm :id="cnpj" ref="dataFormRef" hide-save-button />
+                </TabPanel>
+                <TabPanel value="onboarding">
+                    <EstablishmentOnboardingPanel :id="cnpj" />
                 </TabPanel>
                 <TabPanel value="agendamentos">
                     <EstablishmentAppointments :id="cnpj" />
@@ -120,7 +125,7 @@ async function confirmDelete() {
                         type="button"
                         label="Salvar alterações"
                         :loading="dataFormRef?.saving"
-                        :disabled="!dataFormRef?.isDirty"
+                        :disabled="!dataFormRef?.canSave"
                         @click="dataFormRef?.saveChanges()"
                     />
                 </div>

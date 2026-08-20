@@ -4,10 +4,14 @@ import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import OnboardingCardDialog from '@/components/OnboardingCardDialog.vue';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
+import { useEstablishments } from '@/composables/useEstablishments';
 import { useKanbanDrag } from '@/composables/useKanbanDrag';
 import { getKindMeta, getProjectMeta, getPersonMeta, responsavelNames } from '@/config/onboardingConfig';
+import { getStageMeta } from '@/config/commercialConfig';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import '@/assets/onboarding.css';
+
+const { getEstablishment } = useEstablishments();
 
 const {
     phases,
@@ -100,6 +104,12 @@ function responsavel(card) {
 
 function progressOf(card) {
     return cardProgress(card);
+}
+
+/** Estágio no funil comercial (Convertido, Concluído...) — o mesmo registro visto do outro lado. */
+function pipelineStage(card) {
+    const stageId = getEstablishment(card.id)?.stageId;
+    return stageId ? getStageMeta(stageId) : null;
 }
 </script>
 
@@ -207,6 +217,9 @@ function progressOf(card) {
                                     >
                                         <i :class="kindMeta(card.kind).icon" />
                                         {{ kindMeta(card.kind).label }}
+                                    </span>
+                                    <span v-if="pipelineStage(card)" class="onb-tag onb-tag--moat">
+                                        {{ pipelineStage(card).title }}
                                     </span>
                                     <div class="onb-card__actions">
                                         <button

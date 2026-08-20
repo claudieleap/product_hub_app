@@ -35,10 +35,45 @@ const saving = ref(false);
 const saveError = ref(null);
 const cepLoading = ref(false);
 const cepError = ref(null);
+const editingAddress = ref(false);
+const editingContact = ref(false);
+
+const hasAddress = computed(() => Boolean(draft.endereco || draft.municipio || draft.bairro || draft.cep));
+const hasContact = computed(() => Boolean(draft.contactName || draft.telefone || draft.email));
+
+function formatCep(cep) {
+    const digits = (cep || '').replace(/\D/g, '');
+    return digits.length === 8 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : cep || '';
+}
+
+/** "(19) 3824-3233" (fixo, 8 dígitos) ou "(19) 98888-7777" (celular, 9 dígitos). */
+function formatPhone(ddd, telefone) {
+    const digits = (telefone || '').replace(/\D/g, '');
+    const local = digits.length === 9 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits.length === 8 ? `${digits.slice(0, 4)}-${digits.slice(4)}` : digits;
+    return ddd ? `(${ddd}) ${local}` : local;
+}
+
+const phoneDisplay = computed(() => formatPhone(draft.ddd, draft.telefone));
+const phoneHref = computed(() => `tel:+55${(draft.ddd || '').replace(/\D/g, '')}${(draft.telefone || '').replace(/\D/g, '')}`);
+
+const addressLines = computed(() => {
+    const streetLine = [draft.endereco, draft.numEndereco].filter(Boolean).join(', ');
+    const complementLine = draft.complemento || '';
+    const cityLine = [draft.bairro, [draft.municipio, draft.uf].filter(Boolean).join(' - ')].filter(Boolean).join(', ');
+    const cepLine = draft.cep ? `CEP ${formatCep(draft.cep)}` : '';
+    return [streetLine, complementLine, cityLine, cepLine].filter(Boolean);
+});
+
+const mapEmbedUrl = computed(() => {
+    const query = [addressLines.value.join(', '), draft.cep].filter(Boolean).join(', ');
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&z=15&hl=pt-BR&output=embed`;
+});
 
 function loadDraft() {
     saveError.value = null;
     cepError.value = null;
+    editingAddress.value = false;
+    editingContact.value = false;
     if (!establishment.value) return;
     for (const field of EDITABLE_FIELDS) {
         draft[field] = establishment.value[field] ?? '';
@@ -120,7 +155,7 @@ function removeEspecialidade(value) {
 }
 
 async function saveChanges() {
-    if (!establishment.value) return;
+    if (!establishment.value) return false;
     saving.value = true;
     saveError.value = null;
 
@@ -128,8 +163,10 @@ async function saveChanges() {
 
     try {
         await updateFields(establishment.value.id, patch);
+        return true;
     } catch (error) {
         saveError.value = error.message || 'Não foi possível salvar as alterações.';
+        return false;
     } finally {
         saving.value = false;
     }
@@ -141,63 +178,38 @@ defineExpose({ isDirty, canSave, saving, saveError, saveChanges });
 <template>
     <template v-if="establishment">
         <div class="com-section">
-            <p class="com-section__title"><i class="pi pi-building" /> Dados Corporativos</p>
-            <div class="com-field-row">
-                <div class="com-field"><label>Razão social</label><InputText v-model="draft.razaoSocial" /></div>
-                <div class="com-field"><label>Nome fantasia</label><InputText v-model="draft.fantasia" /></div>
+            <div style="display: flex; align-items: center; justify-content: space-between">
+                <p class="com-section__title" style="margin-bottom: 0"><i class="pi pi-user" /> Contato</p>
+                <button
+                    v-if="hasContact"
+                    type="button"
+                    class="com-icon-btn"
+                    :title="editingContact ? 'Concluir edição' : 'Editar contato'"
+                    @click="editingContact = !editingContact"
+                >
+                    <i :class="editingContact ? 'pi pi-check' : 'pi pi-pencil'" />
+                </button>
             </div>
-            <div class="com-field"><label>CNPJ</label><InputText v-model="draft.cnpj" placeholder="sem CNPJ" /></div>
-            <div class="com-field-row">
-                <div class="com-field" style="flex: 0 0 auto">
-                    <label>Tipo</label>
-                    <div class="onb-seg">
-                        <button
-                            v-for="kind in kinds"
-                            :key="kind.id"
-                            type="button"
-                            class="onb-seg__btn"
-                            :class="{ active: draft.kind === kind.id }"
-                            @click="draft.kind = kind.id"
-                        >
-                            <i :class="kind.icon" />
-                            {{ kind.label }}
-                        </button>
-                    </div>
-                </div>
-                <div class="com-field" style="flex: 0 0 auto">
-                    <label>Projeto <span style="font-weight: 400; color: var(--hub-muted)">(SaaS, BPO ou os dois)</span></label>
-                    <div class="onb-proj-toggle">
-                        <button
-                            v-for="project in projects"
-                            :key="project.id"
-                            type="button"
-                            class="onb-tag onb-tag--toggle"
-                            :class="[`onb-tag--${project.tone}`, { 'onb-tag--off': !isProjectOn(project.id) }]"
-                            @click="toggleProject(project.id)"
-                        >
-                            <i :class="isProjectOn(project.id) ? 'pi pi-check' : project.icon" />
-                            {{ project.label }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="com-field">
-                <label>Classificação</label>
-                <Select v-model="draft.classificacao" :options="CLASSIFICACAO_OPTIONS" append-to="body" />
-            </div>
-            <div class="com-field"><label>Grupo econômico</label><InputText v-model="draft.grupoEcon" /></div>
-        </div>
 
-        <div class="com-section">
-            <p class="com-section__title"><i class="pi pi-user" /> Responsável Legal</p>
-            <div class="com-field-row">
-                <div class="com-field"><label>Nome</label><InputText v-model="draft.contactName" placeholder="Pessoa de contato" /></div>
-                <div class="com-field"><label>CPF</label><InputText v-model="draft.cpf" placeholder="sem CPF" /></div>
-            </div>
-            <div class="com-field-row">
-                <div class="com-field"><label>E-mail</label><InputText v-model="draft.email" /></div>
-                <div class="com-field" style="flex: 0 0 90px"><label>DDD</label><InputText v-model="draft.ddd" /></div>
-                <div class="com-field"><label>Telefone</label><InputText v-model="draft.telefone" /></div>
+            <template v-if="editingContact || !hasContact">
+                <div class="com-field-row" style="margin-top: 10px">
+                    <div class="com-field"><label>Nome</label><InputText v-model="draft.contactName" placeholder="Pessoa de contato" /></div>
+                </div>
+                <div class="com-field-row">
+                    <div class="com-field"><label>E-mail</label><InputText v-model="draft.email" placeholder="email@exemplo.com" /></div>
+                    <div class="com-field" style="flex: 0 0 90px"><label>DDD</label><InputText v-model="draft.ddd" placeholder="11" /></div>
+                    <div class="com-field"><label>Telefone</label><InputText v-model="draft.telefone" placeholder="98765-4321" /></div>
+                </div>
+            </template>
+
+            <div v-else class="com-contact-view">
+                <p class="com-contact-view__name">{{ draft.contactName || 'Sem nome de contato' }}</p>
+                <a v-if="draft.telefone" :href="phoneHref" class="com-contact-view__row">
+                    <i class="pi pi-phone" /> {{ phoneDisplay }}
+                </a>
+                <a v-if="draft.email" :href="`mailto:${draft.email}`" class="com-contact-view__row">
+                    <i class="pi pi-envelope" /> {{ draft.email }}
+                </a>
             </div>
         </div>
 
@@ -228,36 +240,115 @@ defineExpose({ isDirty, canSave, saving, saveError, saveChanges });
         </div>
 
         <div class="com-section">
-            <p class="com-section__title">Endereço</p>
-            <div class="com-field-row">
-                <div class="com-field" style="flex: 0 0 160px">
-                    <label>CEP</label>
-                    <InputText v-model="draft.cep" placeholder="00000000" @blur="lookupCep" />
-                    <span v-if="cepLoading" style="font-size: 11px; color: var(--hub-muted)">Buscando endereço...</span>
-                    <span v-else-if="cepError" style="font-size: 11px; color: var(--hub-coral, #cf4a3e)">{{ cepError }}</span>
-                    <span v-else style="font-size: 11px; color: var(--hub-muted)">Preenche o resto ao sair do campo</span>
+            <div style="display: flex; align-items: center; justify-content: space-between">
+                <p class="com-section__title" style="margin-bottom: 0">Endereço</p>
+                <button
+                    v-if="hasAddress"
+                    type="button"
+                    class="com-icon-btn"
+                    :title="editingAddress ? 'Concluir edição' : 'Editar endereço'"
+                    @click="editingAddress = !editingAddress"
+                >
+                    <i :class="editingAddress ? 'pi pi-check' : 'pi pi-pencil'" />
+                </button>
+            </div>
+
+            <template v-if="editingAddress || !hasAddress">
+                <div class="com-field-row" style="margin-top: 10px">
+                    <div class="com-field" style="flex: 0 0 160px">
+                        <label>CEP</label>
+                        <InputText v-model="draft.cep" placeholder="00000000" @blur="lookupCep" />
+                        <span v-if="cepLoading" style="font-size: 11px; color: var(--hub-muted)">Buscando endereço...</span>
+                        <span v-else-if="cepError" style="font-size: 11px; color: var(--hub-coral, #cf4a3e)">{{ cepError }}</span>
+                        <span v-else style="font-size: 11px; color: var(--hub-muted)">Preenche o resto ao sair do campo</span>
+                    </div>
+                    <div class="com-field" style="flex: 2"><label>Logradouro</label><InputText v-model="draft.endereco" placeholder="Rua, avenida..." /></div>
+                    <div class="com-field" style="flex: 0 0 100px"><label>Número</label><InputText v-model="draft.numEndereco" placeholder="Nº" /></div>
                 </div>
-                <div class="com-field" style="flex: 2"><label>Logradouro</label><InputText v-model="draft.endereco" /></div>
-                <div class="com-field" style="flex: 0 0 100px"><label>Número</label><InputText v-model="draft.numEndereco" /></div>
-            </div>
-            <div class="com-field-row">
-                <div class="com-field"><label>Complemento</label><InputText v-model="draft.complemento" /></div>
-                <div class="com-field"><label>Bairro</label><InputText v-model="draft.bairro" /></div>
-            </div>
-            <div class="com-field-row">
-                <div class="com-field" style="flex: 0 0 80px"><label>UF</label><InputText v-model="draft.uf" /></div>
-                <div class="com-field">
-                    <label>Cidade</label>
-                    <Select
-                        v-model="draft.municipio"
-                        :options="cities"
-                        editable
-                        filter
-                        placeholder="Selecione ou digite a cidade"
-                        append-to="body"
-                        class="w-full"
+                <div class="com-field-row">
+                    <div class="com-field"><label>Complemento</label><InputText v-model="draft.complemento" placeholder="Apto, sala..." /></div>
+                    <div class="com-field"><label>Bairro</label><InputText v-model="draft.bairro" placeholder="Bairro" /></div>
+                </div>
+                <div class="com-field-row">
+                    <div class="com-field" style="flex: 0 0 80px"><label>UF</label><InputText v-model="draft.uf" placeholder="SP" /></div>
+                    <div class="com-field">
+                        <label>Cidade</label>
+                        <Select
+                            v-model="draft.municipio"
+                            :options="cities"
+                            editable
+                            filter
+                            placeholder="Selecione ou digite a cidade"
+                            append-to="body"
+                            class="w-full"
+                        />
+                    </div>
+                </div>
+            </template>
+
+            <div v-else class="com-address-view">
+                <p v-for="line in addressLines" :key="line" class="com-address-view__line">{{ line }}</p>
+                <div class="com-address-view__map">
+                    <iframe
+                        :src="mapEmbedUrl"
+                        title="Mapa do endereço"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
                     />
                 </div>
+            </div>
+        </div>
+
+        <div class="com-section">
+            <p class="com-section__title"><i class="pi pi-building" /> Dados Corporativos</p>
+            <div class="com-field-row">
+                <div class="com-field" style="flex: 0 0 auto">
+                    <label>Tipo</label>
+                    <div class="onb-seg">
+                        <button
+                            v-for="kind in kinds"
+                            :key="kind.id"
+                            type="button"
+                            class="onb-seg__btn"
+                            :class="{ active: draft.kind === kind.id }"
+                            @click="draft.kind = kind.id"
+                        >
+                            <i :class="kind.icon" />
+                            {{ kind.label }}
+                        </button>
+                    </div>
+                </div>
+                <div class="com-field" style="flex: 0 0 auto">
+                    <label>Projeto <span style="font-weight: 400; color: var(--hub-muted)">(SaaS, BPO ou os dois)</span></label>
+                    <div class="onb-seg">
+                        <button
+                            v-for="project in projects"
+                            :key="project.id"
+                            type="button"
+                            class="onb-seg__btn"
+                            :class="{ active: isProjectOn(project.id) }"
+                            @click="toggleProject(project.id)"
+                        >
+                            <i :class="isProjectOn(project.id) ? 'pi pi-check' : project.icon" />
+                            {{ project.label }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="com-field-row">
+                <div class="com-field"><label>Razão social</label><InputText v-model="draft.razaoSocial" placeholder="Razão social da empresa" /></div>
+                <div class="com-field"><label>Nome fantasia</label><InputText v-model="draft.fantasia" placeholder="Nome fantasia" /></div>
+            </div>
+            <div class="com-field-row">
+                <div class="com-field"><label>CNPJ</label><InputMask v-model="draft.cnpj" mask="99.999.999/9999-99" :unmask="true" placeholder="sem CNPJ" /></div>
+                <div class="com-field"><label>CPF</label><InputMask v-model="draft.cpf" mask="999.999.999-99" :unmask="true" placeholder="sem CPF" /></div>
+            </div>
+            <div class="com-field-row">
+                <div class="com-field">
+                    <label>Classificação</label>
+                    <Select v-model="draft.classificacao" :options="CLASSIFICACAO_OPTIONS" placeholder="Selecione a classificação" append-to="body" />
+                </div>
+                <div class="com-field"><label>Grupo econômico</label><InputText v-model="draft.grupoEcon" placeholder="Sem vínculo com grupo econômico" /></div>
             </div>
         </div>
 

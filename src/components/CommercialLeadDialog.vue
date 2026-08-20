@@ -1,11 +1,13 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useEstablishments } from '@/composables/useEstablishments';
+import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
 import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
 import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
+import OnboardingPhaseStepper from '@/components/OnboardingPhaseStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -16,11 +18,24 @@ const props = defineProps({
 const emit = defineEmits(['deleted']);
 
 const { getEstablishment, removeEstablishment, moveToStage } = useEstablishments();
+const { phases: onboardingPhases, moveCardToPhase } = useOnboardingBoard();
 
 const establishment = computed(() => getEstablishment(props.cnpj));
 
+/** "Convertido" ou "Concluído" — só a partir daí o board de Onboarding passa a valer pro lead. */
+const isConverted = computed(() => ['onboardado_fremium', 'concluido'].includes(establishment.value?.stageId));
+
+function onPhaseChange(phaseId) {
+    if (!establishment.value) return;
+    moveCardToPhase(establishment.value.id, phaseId);
+}
+
 const activeTab = ref('dados');
 const dataFormRef = ref(null);
+
+watch(isConverted, (converted) => {
+    if (!converted && activeTab.value === 'onboarding') activeTab.value = 'dados';
+});
 
 const deleting = ref(false);
 const deleteError = ref(null);
@@ -39,6 +54,11 @@ async function onStageChange(stageId) {
     } finally {
         stageChanging.value = false;
     }
+}
+
+async function saveAndClose() {
+    const ok = await dataFormRef.value?.saveChanges();
+    if (ok) visible.value = false;
 }
 
 async function confirmDelete() {
@@ -81,25 +101,32 @@ async function confirmDelete() {
         />
         <p v-if="stageError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e); margin: -10px 0 14px">{{ stageError }}</p>
 
+        <OnboardingPhaseStepper
+            v-if="establishment?.onboardingPhaseId"
+            :phases="onboardingPhases"
+            :model-value="establishment.onboardingPhaseId"
+            @update:model-value="onPhaseChange"
+        />
+
         <Tabs v-model:value="activeTab">
             <TabList>
                 <Tab value="dados">Dados</Tab>
-                <Tab value="onboarding">Onboarding</Tab>
                 <Tab value="agendamentos">Agendamentos</Tab>
                 <Tab value="comentarios">Comentários</Tab>
+                <Tab v-if="isConverted" value="onboarding">Onboarding</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="dados">
                     <EstablishmentDataForm :id="cnpj" ref="dataFormRef" hide-save-button />
-                </TabPanel>
-                <TabPanel value="onboarding">
-                    <EstablishmentOnboardingPanel :id="cnpj" />
                 </TabPanel>
                 <TabPanel value="agendamentos">
                     <EstablishmentAppointments :id="cnpj" />
                 </TabPanel>
                 <TabPanel value="comentarios">
                     <EstablishmentComments :id="cnpj" />
+                </TabPanel>
+                <TabPanel v-if="isConverted" value="onboarding">
+                    <EstablishmentOnboardingPanel :id="cnpj" />
                 </TabPanel>
             </TabPanels>
         </Tabs>
@@ -126,7 +153,7 @@ async function confirmDelete() {
                         label="Salvar alterações"
                         :loading="dataFormRef?.saving"
                         :disabled="!dataFormRef?.canSave"
-                        @click="dataFormRef?.saveChanges()"
+                        @click="saveAndClose"
                     />
                 </div>
             </div>

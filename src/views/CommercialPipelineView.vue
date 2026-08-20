@@ -26,6 +26,7 @@ const dialogVisible = ref(false);
 const activeCnpj = ref('');
 const creating = ref(false);
 const importInput = ref(null);
+const downloadingTemplate = ref(false);
 const importing = ref(false);
 const importMessage = ref(null);
 const importError = ref(null);
@@ -105,6 +106,18 @@ function triggerImport() {
     importInput.value?.click();
 }
 
+async function downloadTemplate() {
+    downloadingTemplate.value = true;
+    importError.value = null;
+    try {
+        await establishmentsApi.downloadTemplate();
+    } catch (error) {
+        importError.value = error.message || 'Não foi possível baixar o modelo.';
+    } finally {
+        downloadingTemplate.value = false;
+    }
+}
+
 async function handleImportFile(event) {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -143,13 +156,23 @@ async function handleImportFile(event) {
                         v-if="isAdmin"
                         type="button"
                         severity="secondary"
+                        text
+                        icon="pi pi-download"
+                        label="Baixar modelo"
+                        :loading="downloadingTemplate"
+                        @click="downloadTemplate"
+                    />
+                    <Button
+                        v-if="isAdmin"
+                        type="button"
+                        severity="secondary"
                         icon="pi pi-upload"
                         label="Importar planilha"
                         :loading="importing"
                         @click="triggerImport"
                     />
                     <input ref="importInput" type="file" accept=".xlsx,.xls" style="display: none" @change="handleImportFile" />
-                    <Button type="button" icon="pi pi-plus" label="Novo Lead" :loading="creating" @click="handleNewLead" />
+                    <Button type="button" icon="pi pi-plus" label="Novo estabelecimento" :loading="creating" @click="handleNewLead" />
                 </template>
             </PageHeader>
 
@@ -246,7 +269,7 @@ async function handleImportFile(event) {
                                 </div>
 
                                 <button
-                                    v-if="lead.stageId === CONVERTED_STAGE"
+                                    v-if="lead.stageId === CONVERTED_STAGE && !lead.onboardingPhaseId"
                                     type="button"
                                     class="com-chip-add"
                                     data-no-drag
@@ -255,6 +278,13 @@ async function handleImportFile(event) {
                                 >
                                     <i class="pi pi-arrow-right" /> Enviar para onboarding
                                 </button>
+                                <div
+                                    v-else-if="lead.stageId === CONVERTED_STAGE"
+                                    class="com-onboarding-sent"
+                                    style="margin-top: 10px"
+                                >
+                                    <i class="pi pi-check-circle" /> Já está no Onboarding
+                                </div>
                             </article>
                         </div>
                     </section>

@@ -474,3 +474,13 @@ export function useOnboardingBoard() {
         cardProgress
     };
 }
+
+/**
+ * Este módulo mantém estado singleton no topo do arquivo (state, watchers por
+ * cartão, hydratePromise) sem nenhuma limpeza — HMR parcial deixaria uma cópia
+ * antiga rodando em paralelo com a nova a cada edição. Força reload completo
+ * da página em vez de hot-swap, pra nunca acumular instâncias fantasmas.
+ */
+if (import.meta.hot) {
+    import.meta.hot.accept(() => import.meta.hot.invalidate());
+}

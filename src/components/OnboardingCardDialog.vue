@@ -1,12 +1,10 @@
 <script setup>
 import { computed, ref } from 'vue';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
-import { useEstablishments } from '@/composables/useEstablishments';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
 import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
-import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
 import OnboardingPhaseStepper from '@/components/OnboardingPhaseStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
@@ -19,28 +17,9 @@ const emit = defineEmits(['deleted']);
 
 const { getCard, removeCard, phases, moveCardToPhase } = useOnboardingBoard();
 
-const { getEstablishment, moveToStage } = useEstablishments();
-
 const card = computed(() => getCard(props.cardId));
-const establishment = computed(() => (card.value ? getEstablishment(card.value.id) : null));
 
 const dataFormRef = ref(null);
-
-const stageChanging = ref(false);
-const stageError = ref(null);
-
-async function onStageChange(stageId) {
-    if (!establishment.value) return;
-    stageChanging.value = true;
-    stageError.value = null;
-    try {
-        await moveToStage(establishment.value.id, stageId);
-    } catch (error) {
-        stageError.value = error.message || 'Não foi possível mover o estabelecimento.';
-    } finally {
-        stageChanging.value = false;
-    }
-}
 
 function onPhaseChange(phaseId) {
     if (!card.value) return;
@@ -74,14 +53,6 @@ function confirmDelete() {
         :draggable="false"
     >
         <template v-if="card">
-        <CommercialStageStepper
-            v-if="establishment?.stageId"
-            :model-value="establishment.stageId"
-            :loading="stageChanging"
-            @update:model-value="onStageChange"
-        />
-        <p v-if="stageError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e); margin: -10px 0 14px">{{ stageError }}</p>
-
         <OnboardingPhaseStepper
             :phases="phases"
             :model-value="card.phaseId"

@@ -1,13 +1,11 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { useEstablishments } from '@/composables/useEstablishments';
-import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
 import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
 import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
-import OnboardingPhaseStepper from '@/components/OnboardingPhaseStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -18,17 +16,11 @@ const props = defineProps({
 const emit = defineEmits(['deleted']);
 
 const { getEstablishment, removeEstablishment, moveToStage } = useEstablishments();
-const { phases: onboardingPhases, moveCardToPhase } = useOnboardingBoard();
 
 const establishment = computed(() => getEstablishment(props.cnpj));
 
 /** "Convertido" ou "Concluído" — só a partir daí o board de Onboarding passa a valer pro lead. */
 const isConverted = computed(() => ['onboardado_fremium', 'concluido'].includes(establishment.value?.stageId));
-
-function onPhaseChange(phaseId) {
-    if (!establishment.value) return;
-    moveCardToPhase(establishment.value.id, phaseId);
-}
 
 const activeTab = ref('dados');
 const dataFormRef = ref(null);
@@ -100,13 +92,6 @@ async function confirmDelete() {
             @update:model-value="onStageChange"
         />
         <p v-if="stageError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e); margin: -10px 0 14px">{{ stageError }}</p>
-
-        <OnboardingPhaseStepper
-            v-if="establishment?.onboardingPhaseId"
-            :phases="onboardingPhases"
-            :model-value="establishment.onboardingPhaseId"
-            @update:model-value="onPhaseChange"
-        />
 
         <Tabs v-model:value="activeTab">
             <TabList>

@@ -1,17 +1,11 @@
 <script setup>
 import { computed, ref } from 'vue';
-import {
-    ONBOARDING_PROJECTS,
-    ONBOARDING_PEOPLE
-} from '@/config/onboardingConfig';
 import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
-import { useEstablishments } from '@/composables/useEstablishments';
-import OnboardingCellDialog from '@/components/OnboardingCellDialog.vue';
-import OnboardingCellTile from '@/components/OnboardingCellTile.vue';
-import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
+import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
-import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
+import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
+import OnboardingPhaseStepper from '@/components/OnboardingPhaseStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
 
@@ -21,71 +15,20 @@ const props = defineProps({
 
 const emit = defineEmits(['deleted']);
 
-const {
-    getCard,
-    updateCard,
-    removeCard,
-    addUnit,
-    removeUnit,
-    addConvenio,
-    removeConvenio,
-    readCell,
-    cardProgress
-} = useOnboardingBoard();
-
-const { getEstablishment, moveToStage } = useEstablishments();
+const { getCard, removeCard, phases, moveCardToPhase } = useOnboardingBoard();
 
 const card = computed(() => getCard(props.cardId));
-const establishment = computed(() => (card.value ? getEstablishment(card.value.id) : null));
 
-const stageChanging = ref(false);
-const stageError = ref(null);
+const dataFormRef = ref(null);
 
-async function onStageChange(stageId) {
-    if (!establishment.value) return;
-    stageChanging.value = true;
-    stageError.value = null;
-    try {
-        await moveToStage(establishment.value.id, stageId);
-    } catch (error) {
-        stageError.value = error.message || 'Não foi possível mover o estabelecimento.';
-    } finally {
-        stageChanging.value = false;
-    }
+function onPhaseChange(phaseId) {
+    if (!card.value) return;
+    moveCardToPhase(card.value.id, phaseId);
 }
 
-const peopleGroups = ONBOARDING_PROJECTS.map((project) => ({
-    label: project.label,
-    items: ONBOARDING_PEOPLE.filter((person) => person.project === project.id)
-}));
-
-const responsavel = computed(() =>
-    ONBOARDING_PEOPLE.find((person) => person.id === card.value?.responsavelId) ?? null
-);
-
-function setResponsavel(personId) {
-    if (card.value) updateCard(card.value.id, { responsavelId: personId ?? null });
-}
-
-const cellDialogVisible = ref(false);
-const activeConvenio = ref(null);
-const activeUnit = ref(null);
-
-const hasMatrix = computed(() => (card.value?.units.length ?? 0) > 0 && (card.value?.convenios.length ?? 0) > 0);
-
-const gridStyle = computed(() => {
-    const cols = card.value?.units.length ?? 0;
-    return {
-        gridTemplateColumns: `minmax(150px, 210px) repeat(${cols}, minmax(168px, 1fr))`
-    };
-});
-
-const progress = computed(() => (card.value ? cardProgress(card.value) : { pct: 0, done: 0, total: 0 }));
-
-function openCell(convenio, unit) {
-    activeConvenio.value = convenio;
-    activeUnit.value = unit;
-    cellDialogVisible.value = true;
+async function saveAndClose() {
+    const ok = await dataFormRef.value?.saveChanges();
+    if (ok) visible.value = false;
 }
 
 function confirmDelete() {
@@ -110,171 +53,60 @@ function confirmDelete() {
         :draggable="false"
     >
         <template v-if="card">
-        <CommercialStageStepper
-            v-if="establishment?.stageId"
-            :model-value="establishment.stageId"
-            :loading="stageChanging"
-            @update:model-value="onStageChange"
+        <OnboardingPhaseStepper
+            :phases="phases"
+            :model-value="card.phaseId"
+            @update:model-value="onPhaseChange"
         />
-        <p v-if="stageError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e); margin: -10px 0 14px">{{ stageError }}</p>
 
         <Tabs value="dados">
             <TabList>
                 <Tab value="dados">Dados</Tab>
-                <Tab value="onboarding">Onboarding</Tab>
+                <Tab value="agendamentos">Agendamentos</Tab>
                 <Tab value="comentarios">Comentários</Tab>
+                <Tab value="onboarding">Onboarding</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="dados">
-                    <EstablishmentDataForm :id="card.id" />
+                    <EstablishmentDataForm :id="card.id" ref="dataFormRef" hide-save-button />
+                </TabPanel>
+                <TabPanel value="agendamentos">
+                    <EstablishmentAppointments :id="card.id" />
                 </TabPanel>
                 <TabPanel value="comentarios">
                     <EstablishmentComments :id="card.id" />
                 </TabPanel>
                 <TabPanel value="onboarding">
-            <!-- Configuração do estabelecimento -->
-            <div class="onb-section">
-                <p class="onb-section__title">Estabelecimento</p>
-                <div class="onb-field" style="max-width: 340px">
-                    <label>Responsável</label>
-                    <Select
-                        :model-value="card.responsavelId"
-                        :options="peopleGroups"
-                        option-group-label="label"
-                        option-group-children="items"
-                        option-label="name"
-                        option-value="id"
-                        show-clear
-                        placeholder="Sem responsável"
-                        append-to="body"
-                        class="w-full onb-responsavel-select"
-                        @update:model-value="setResponsavel"
-                    >
-                        <template #value>
-                            <span v-if="responsavel" class="onb-person">
-                                <OnboardingAvatar :avatar="responsavel.avatar" :size="22" />
-                                {{ responsavel.name }}
-                            </span>
-                            <span v-else class="onb-person onb-person--empty">Sem responsável</span>
-                        </template>
-                        <template #option="slotProps">
-                            <span class="onb-person">
-                                <OnboardingAvatar :avatar="slotProps.option.avatar" :size="26" />
-                                {{ slotProps.option.name }}
-                            </span>
-                        </template>
-                        <template #optiongroup="slotProps">
-                            <span class="onb-person-group">{{ slotProps.option.label }}</span>
-                        </template>
-                    </Select>
-                </div>
-            </div>
-
-            <!-- Unidades -->
-            <div class="onb-section">
-                <p class="onb-section__title">Unidades</p>
-                <div class="onb-chips">
-                    <div v-for="unit in card.units" :key="unit.id" class="onb-chip">
-                        <input v-model="unit.name" :aria-label="`Nome da ${unit.name}`" />
-                        <button
-                            type="button"
-                            class="onb-chip__remove"
-                            title="Remover unidade"
-                            @click="removeUnit(card.id, unit.id)"
-                        >
-                            <i class="pi pi-times" />
-                        </button>
-                    </div>
-                    <button type="button" class="onb-chip-add" @click="addUnit(card.id)">
-                        <i class="pi pi-plus" /> Unidade
-                    </button>
-                </div>
-            </div>
-
-            <!-- Convênios -->
-            <div class="onb-section">
-                <p class="onb-section__title">Convênios</p>
-                <div class="onb-chips">
-                    <div v-for="convenio in card.convenios" :key="convenio.id" class="onb-chip">
-                        <input v-model="convenio.name" :aria-label="`Nome do ${convenio.name}`" />
-                        <button
-                            type="button"
-                            class="onb-chip__remove"
-                            title="Remover convênio"
-                            @click="removeConvenio(card.id, convenio.id)"
-                        >
-                            <i class="pi pi-times" />
-                        </button>
-                    </div>
-                    <button type="button" class="onb-chip-add" @click="addConvenio(card.id)">
-                        <i class="pi pi-plus" /> Convênio
-                    </button>
-                </div>
-            </div>
-
-            <!-- Matriz Convênios × Unidades -->
-            <div class="onb-section">
-                <div style="display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px">
-                    <p class="onb-section__title" style="margin: 0">Matriz de implantação</p>
-                    <span class="onb-progress-label" style="text-align: left">{{ progress.pct }}% concluído</span>
-                </div>
-
-                <div v-if="hasMatrix" class="onb-matrix-wrap">
-                    <div class="onb-matrix" :style="gridStyle">
-                        <!-- Cabeçalho -->
-                        <div class="onb-matrix__corner">Convênio ↓ · Unidade →</div>
-                        <div
-                            v-for="unit in card.units"
-                            :key="`h-${unit.id}`"
-                            class="onb-matrix__col-head"
-                        >
-                            {{ unit.name }}
-                        </div>
-
-                        <!-- Linhas -->
-                        <template v-for="convenio in card.convenios" :key="convenio.id">
-                            <div class="onb-matrix__row-head">{{ convenio.name }}</div>
-                            <div
-                                v-for="unit in card.units"
-                                :key="`${convenio.id}-${unit.id}`"
-                                class="onb-matrix__cell"
-                            >
-                                <OnboardingCellTile
-                                    :cell="readCell(card, convenio.id, unit.id)"
-                                    @click="openCell(convenio, unit)"
-                                />
-                            </div>
-                        </template>
-                    </div>
-                </div>
-
-                <div v-else class="onb-matrix-wrap">
-                    <p class="onb-matrix__empty">
-                        Adicione pelo menos uma unidade e um convênio para montar a matriz.
-                    </p>
-                </div>
-            </div>
+                    <EstablishmentOnboardingPanel :id="card.id" />
                 </TabPanel>
             </TabPanels>
         </Tabs>
-
-            <OnboardingCellDialog
-                v-model:visible="cellDialogVisible"
-                :card-id="card.id"
-                :convenio="activeConvenio"
-                :unit="activeUnit"
-            />
         </template>
 
         <template #footer>
-            <Button
-                label="Excluir"
-                severity="danger"
-                text
-                icon="pi pi-trash"
-                @click="confirmDelete"
-            />
-            <Button label="Fechar" icon="pi pi-check" @click="visible = false" />
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px">
+                <div style="display: flex; align-items: center; gap: 10px">
+                    <Button
+                        label="Excluir"
+                        severity="danger"
+                        text
+                        icon="pi pi-trash"
+                        @click="confirmDelete"
+                    />
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px">
+                    <span v-if="dataFormRef?.saveError" style="font-size: 12px; color: var(--hub-coral, #cf4a3e)">{{ dataFormRef.saveError }}</span>
+                    <span v-else-if="dataFormRef?.isDirty" style="font-size: 12px; color: var(--hub-muted)">Alterações não salvas</span>
+                    <Button
+                        type="button"
+                        label="Salvar alterações"
+                        :loading="dataFormRef?.saving"
+                        :disabled="!dataFormRef?.canSave"
+                        @click="saveAndClose"
+                    />
+                </div>
+            </div>
         </template>
     </Dialog>
 </template>

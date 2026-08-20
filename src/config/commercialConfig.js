@@ -14,6 +14,7 @@ export const COMMERCIAL_STAGES = [
     { id: 'fremium_aceito', title: 'Reunião Agendada', hint: '' },
     { id: 'proposta_apresentada', title: 'Proposta Apresentada', hint: '' },
     { id: 'onboardado_fremium', title: 'Convertido', hint: '' },
+    { id: 'concluido', title: 'Concluído', hint: '' },
     { id: 'levantada_mao', title: 'Perdido', hint: '' }
 ];
 

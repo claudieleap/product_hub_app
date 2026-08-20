@@ -77,6 +77,27 @@ export const establishmentsApi = {
     deleteAppointment: (establishmentId, appointmentId) =>
         request('DELETE', `/establishments/${encodeURIComponent(establishmentId)}/appointments/${encodeURIComponent(appointmentId)}`),
 
+    async downloadTemplate() {
+        const response = await fetch(`${baseUrl}/establishments/import-template`, {
+            method: 'GET',
+            headers: headers()
+        });
+
+        if (!response.ok) {
+            throw new Error(`Não foi possível baixar o modelo (${response.status})`);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'modelo-importacao-estabelecimentos.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+    },
+
     async import(file) {
         const response = await fetch(`${baseUrl}/establishments/import`, {
             method: 'POST',

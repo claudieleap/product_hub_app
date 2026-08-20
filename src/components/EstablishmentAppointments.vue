@@ -4,6 +4,7 @@ import { useEstablishments } from '@/composables/useEstablishments';
 import { establishmentsApi } from '@/api/establishmentsClient';
 import { ONBOARDING_PEOPLE } from '@/config/onboardingConfig';
 import OnboardingAvatar from '@/components/OnboardingAvatar.vue';
+import AppointmentDialog from '@/components/AppointmentDialog.vue';
 import '@/assets/commercial.css';
 
 const props = defineProps({
@@ -17,6 +18,7 @@ const establishment = computed(() => getEstablishment(props.id));
 const appointments = ref([]);
 const loading = ref(false);
 const error = ref(null);
+const dialogVisible = ref(false);
 
 async function loadAppointments() {
     appointments.value = [];
@@ -54,6 +56,10 @@ function formatDate(iso) {
 
 <template>
     <template v-if="establishment">
+        <div style="margin-bottom: 12px">
+            <Button type="button" size="small" icon="pi pi-plus" label="Novo agendamento" @click="dialogVisible = true" />
+        </div>
+
         <p v-if="loading" class="com-comment-empty">Carregando agendamentos...</p>
         <p v-else-if="error" class="com-comment-empty" style="color: var(--hub-coral, #cf4a3e)">{{ error }}</p>
         <p v-else-if="!appointments.length" class="com-comment-empty">Nenhum agendamento ainda.</p>
@@ -81,5 +87,11 @@ function formatDate(iso) {
                 </div>
             </li>
         </ul>
+
+        <AppointmentDialog
+            v-model:visible="dialogVisible"
+            :establishment-id="establishment.id"
+            @created="loadAppointments"
+        />
     </template>
 </template>

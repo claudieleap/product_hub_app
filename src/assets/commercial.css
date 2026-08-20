@@ -308,12 +308,19 @@
     font-weight: 700;
 }
 
+/* Rodapé com o mesmo respiro/borda que o stepper já usa lá em cima,
+   pra fechar a moldura do dialog de forma simétrica. */
+.com-dialog .p-dialog-footer {
+    border-top: 1px solid var(--hub-line);
+    padding-top: 14px;
+}
+
 /* ---------- Stepper de estágio (acima das abas do dialog) ---------- */
 
 .com-stepper {
     display: flex;
     align-items: flex-start;
-    padding: 4px 4px 16px;
+    padding: 14px 4px 16px;
     margin-bottom: 8px;
     border-bottom: 1px solid var(--hub-line);
 }
@@ -455,6 +462,79 @@
     align-items: center;
 }
 
+/* ---------- Endereço (visualização + mapa) ---------- */
+
+.com-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid var(--hub-line);
+    background: var(--hub-surface);
+    color: var(--hub-muted);
+    cursor: pointer;
+    flex: none;
+}
+
+.com-icon-btn:hover {
+    color: var(--hub-blue);
+    border-color: var(--hub-blue);
+}
+
+.com-address-view {
+    margin-top: 10px;
+}
+
+.com-address-view__line {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: var(--hub-ink-soft);
+}
+
+.com-address-view__map {
+    margin-top: 10px;
+    border: 1px solid var(--hub-line);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.com-address-view__map iframe {
+    display: block;
+    width: 100%;
+    height: 220px;
+    border: 0;
+}
+
+.com-contact-view {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.com-contact-view__name {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--hub-ink);
+}
+
+.com-contact-view__row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--hub-blue);
+    text-decoration: none;
+}
+
+.com-contact-view__row:hover {
+    text-decoration: underline;
+}
+
 .com-chip {
     display: inline-flex;
     align-items: center;
@@ -512,6 +592,20 @@
 .com-chip-add:hover {
     border-color: var(--hub-blue);
     color: var(--hub-blue);
+}
+
+.com-onboarding-sent {
+    border: 1px solid color-mix(in srgb, var(--hub-teal) 30%, transparent);
+    background: var(--hub-teal-wash);
+    color: var(--hub-teal);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
 }
 
 /* ---------- Comentários (dialog) ---------- */

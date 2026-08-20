@@ -103,6 +103,7 @@ function hydrate() {
         );
 
         state.cards = onboardingItems.map((establishment, index) => cardFromEstablishment(establishment, details[index]));
+        state.cards.forEach(watchCard);
         state.hydrated = true;
     })();
 
@@ -146,18 +147,28 @@ async function persistCells(card) {
     );
 }
 
-let syncTimer = null;
-function schedulePersist() {
-    clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => {
-        state.cards.forEach((card) => {
-            persistCard(card).catch((error) => console.warn('[onboarding] falha ao sincronizar cartão.', error));
-            persistCells(card).catch((error) => console.warn('[onboarding] falha ao sincronizar matriz.', error));
-        });
-    }, 500);
+/** Um debounce por cartão — evita re-sincronizar o board inteiro a cada edição. */
+const syncTimers = new Map();
+function schedulePersistCard(card) {
+    clearTimeout(syncTimers.get(card.id));
+    syncTimers.set(card.id, setTimeout(() => {
+        syncTimers.delete(card.id);
+        persistCard(card).catch((error) => console.warn('[onboarding] falha ao sincronizar cartão.', error));
+        persistCells(card).catch((error) => console.warn('[onboarding] falha ao sincronizar matriz.', error));
+    }, 500));
 }
 
-watch(() => state.cards, schedulePersist, { deep: true });
+const watchedCardIds = new Set();
+/**
+ * Os diálogos editam campos direto por v-model (sem passar por um setter), então cada
+ * cartão ganha seu próprio watcher — só ele é re-sincronizado quando muda, não o board
+ * inteiro (evita uma rajada de requisições a cada edição de um único cartão).
+ */
+function watchCard(card) {
+    if (watchedCardIds.has(card.id)) return;
+    watchedCardIds.add(card.id);
+    watch(() => card, () => schedulePersistCard(card), { deep: true });
+}
 
 /* ---------- fases (colunas) ---------- */
 
@@ -223,6 +234,7 @@ function addCard({ phaseId, name = 'Novo estabelecimento', kind = 'clinica' } = 
     };
 
     state.cards.push(card);
+    watchCard(card);
 
     establishmentsApi
         .create({ id: card.id, razaoSocial: name, fantasia: name, kind, onboardingPhaseId: targetPhase, onboardingOrderIndex: order })
@@ -232,6 +244,32 @@ function addCard({ phaseId, name = 'Novo estabelecimento', kind = 'clinica' } = 
         .catch((error) => console.warn('[onboarding] falha ao criar estabelecimento.', error));
 
     return card;
+}
+
+/**
+ * Promove um estabelecimento que já existe (ex.: veio do Pipeline comercial) pro
+ * board de Onboarding. Diferente de addCard: não cria um registro novo, só marca
+ * a fase no backend e — como o board só hidrata uma vez — adiciona o card local
+ * na hora, sem precisar recarregar a página pra ele aparecer.
+ */
+async function sendExistingToOnboarding(establishmentId, phaseId) {
+    const targetPhase = phaseId ?? onboardingPhases.phases.value[0]?.id ?? 'backlog';
+    const order = countByPhase(targetPhase);
+
+    await sharedEstablishments.updateFields(establishmentId, {
+        onboardingPhaseId: targetPhase,
+        onboardingOrderIndex: order
+    });
+
+    if (getCard(establishmentId)) return;
+
+    const establishment = sharedEstablishments.getEstablishment(establishmentId);
+    if (!establishment) return;
+
+    const detail = await establishmentsApi.detail(establishmentId).catch(() => null);
+    const card = cardFromEstablishment(establishment, detail);
+    state.cards.push(card);
+    watchCard(card);
 }
 
 function updateCard(cardId, patch = {}) {
@@ -414,6 +452,7 @@ export function useOnboardingBoard() {
         countByPhase,
         getCard,
         addCard,
+        sendExistingToOnboarding,
         updateCard,
         toggleCardProject,
         removeCard,
@@ -434,4 +473,14 @@ export function useOnboardingBoard() {
         setConciliado,
         cardProgress
     };
+}
+
+/**
+ * Este módulo mantém estado singleton no topo do arquivo (state, watchers por
+ * cartão, hydratePromise) sem nenhuma limpeza — HMR parcial deixaria uma cópia
+ * antiga rodando em paralelo com a nova a cada edição. Força reload completo
+ * da página em vez de hot-swap, pra nunca acumular instâncias fantasmas.
+ */
+if (import.meta.hot) {
+    import.meta.hot.accept(() => import.meta.hot.invalidate());
 }

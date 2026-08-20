@@ -1,9 +1,10 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useEstablishments } from '@/composables/useEstablishments';
 import EstablishmentDataForm from '@/components/EstablishmentDataForm.vue';
 import EstablishmentAppointments from '@/components/EstablishmentAppointments.vue';
 import EstablishmentComments from '@/components/EstablishmentComments.vue';
+import EstablishmentOnboardingPanel from '@/components/EstablishmentOnboardingPanel.vue';
 import CommercialStageStepper from '@/components/CommercialStageStepper.vue';
 
 const visible = defineModel('visible', { type: Boolean, default: false });
@@ -18,8 +19,15 @@ const { getEstablishment, removeEstablishment, moveToStage } = useEstablishments
 
 const establishment = computed(() => getEstablishment(props.cnpj));
 
+/** "Convertido" ou "Concluído" — só a partir daí o board de Onboarding passa a valer pro lead. */
+const isConverted = computed(() => ['onboardado_fremium', 'concluido'].includes(establishment.value?.stageId));
+
 const activeTab = ref('dados');
 const dataFormRef = ref(null);
+
+watch(isConverted, (converted) => {
+    if (!converted && activeTab.value === 'onboarding') activeTab.value = 'dados';
+});
 
 const deleting = ref(false);
 const deleteError = ref(null);
@@ -38,6 +46,11 @@ async function onStageChange(stageId) {
     } finally {
         stageChanging.value = false;
     }
+}
+
+async function saveAndClose() {
+    const ok = await dataFormRef.value?.saveChanges();
+    if (ok) visible.value = false;
 }
 
 async function confirmDelete() {
@@ -68,7 +81,7 @@ async function confirmDelete() {
         append-to="body"
         class="com-dialog"
         :header="establishment?.fantasia || establishment?.razaoSocial || 'Estabelecimento'"
-        :style="{ width: 'min(760px, 96vw)' }"
+        :style="{ width: 'min(960px, 96vw)' }"
         :content-style="{ maxHeight: '78vh' }"
         :draggable="false"
     >
@@ -85,6 +98,7 @@ async function confirmDelete() {
                 <Tab value="dados">Dados</Tab>
                 <Tab value="agendamentos">Agendamentos</Tab>
                 <Tab value="comentarios">Comentários</Tab>
+                <Tab v-if="isConverted" value="onboarding">Onboarding</Tab>
             </TabList>
             <TabPanels>
                 <TabPanel value="dados">
@@ -95,6 +109,9 @@ async function confirmDelete() {
                 </TabPanel>
                 <TabPanel value="comentarios">
                     <EstablishmentComments :id="cnpj" />
+                </TabPanel>
+                <TabPanel v-if="isConverted" value="onboarding">
+                    <EstablishmentOnboardingPanel :id="cnpj" />
                 </TabPanel>
             </TabPanels>
         </Tabs>
@@ -120,8 +137,8 @@ async function confirmDelete() {
                         type="button"
                         label="Salvar alterações"
                         :loading="dataFormRef?.saving"
-                        :disabled="!dataFormRef?.isDirty"
-                        @click="dataFormRef?.saveChanges()"
+                        :disabled="!dataFormRef?.canSave"
+                        @click="saveAndClose"
                     />
                 </div>
             </div>

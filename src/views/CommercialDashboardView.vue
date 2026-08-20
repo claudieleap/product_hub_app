@@ -3,11 +3,13 @@ import { computed, onMounted, ref } from 'vue';
 import VuePressLayout from '@/layouts/VuePressLayout.vue';
 import PageHeader from '@/components/PageHeader.vue';
 import { useEstablishments } from '@/composables/useEstablishments';
+import { useOnboardingBoard } from '@/composables/useOnboardingBoard';
 import { establishmentsApi } from '@/api/establishmentsClient';
 import { COMMERCIAL_STAGES } from '@/config/commercialConfig';
 import '@/assets/commercial.css';
 
 const { pipelineEstablishments, isHydrated, loadError } = useEstablishments();
+const { phases: onboardingPhases, cards: onboardingCards, hydrated: onboardingHydrated } = useOnboardingBoard();
 
 /* ---------- Filtro de data (última atualização do card) — default: tudo ---------- */
 
@@ -135,6 +137,25 @@ const conversionComparison = computed(() => [
 ]);
 
 const maxConversionCount = computed(() => Math.max(1, ...conversionComparison.value.map((c) => c.count)));
+
+/* ---------- Onboarding: clínicas por fase de implantação (ranking ordinal) ---------- */
+
+const onboardingPhaseCounts = computed(() =>
+    onboardingPhases.value.map((phase, index) => ({
+        id: phase.id,
+        title: phase.title,
+        count: onboardingCards.value.filter((card) => card.phaseId === phase.id).length,
+        opacity: 0.45 + (index / Math.max(1, onboardingPhases.value.length - 1)) * 0.55
+    }))
+);
+
+const totalOnboarding = computed(() => onboardingCards.value.length);
+const maxOnboardingPhaseCount = computed(() => Math.max(1, ...onboardingPhaseCounts.value.map((p) => p.count)));
+
+function onboardingPhaseTooltip(phase) {
+    const pct = totalOnboarding.value ? ((phase.count / totalOnboarding.value) * 100).toFixed(1) : '0';
+    return `${phase.title}: ${phase.count} clínicas (${pct}% do total)`;
+}
 
 /* ---------- Composição por classificação (donut, paleta categórica) ---------- */
 
@@ -310,6 +331,30 @@ const donutSegments = computed(() => {
                             </span>
                             <span class="com-bar-row__value">{{ entry.count }}</span>
                         </div>
+                    </div>
+
+                    <div class="com-dash-panel com-dash-panel--wide">
+                        <h2 class="com-dash-panel__title">Onboarding — clínicas por fase de implantação</h2>
+                        <p class="com-dash-panel__subtitle">Distribuição no board de Onboarding, do backlog à conciliação</p>
+                        <p v-if="!onboardingHydrated" class="roadmap-sync-warning">Carregando dados de onboarding...</p>
+                        <template v-else>
+                            <p v-if="!onboardingPhaseCounts.length" class="com-comment-empty">Nenhuma fase de onboarding cadastrada.</p>
+                            <div
+                                v-for="phase in onboardingPhaseCounts"
+                                :key="phase.id"
+                                class="com-bar-row"
+                                :title="onboardingPhaseTooltip(phase)"
+                            >
+                                <span class="com-bar-row__label">{{ phase.title }}</span>
+                                <span class="com-bar-row__track">
+                                    <span
+                                        class="com-bar-row__fill"
+                                        :style="{ width: `${(phase.count / maxOnboardingPhaseCount) * 100}%`, '--com-bar-hue': 'var(--hub-moat)', opacity: phase.opacity }"
+                                    />
+                                </span>
+                                <span class="com-bar-row__value">{{ phase.count }}</span>
+                            </div>
+                        </template>
                     </div>
 
                     <div class="com-dash-panel com-dash-panel--wide">
